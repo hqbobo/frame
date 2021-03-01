@@ -17,14 +17,12 @@ require (
 	github.com/go-redis/redis/v8 v8.5.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.2
-	github.com/jinzhu/gorm v1.9.16
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2
 	github.com/micro/go-micro v1.18.0
 	github.com/micro/go-micro/v2 v2.3.0
 	github.com/micro/go-plugins/broker/kafka/v2 v2.3.0
 	github.com/micro/go-plugins/broker/rabbitmq/v2 v2.3.0
-	github.com/micro/go-plugins/registry/consul v0.0.0-20200119172437-4fe21aa238fd
 	github.com/micro/go-plugins/registry/consul/v2 v2.3.0
 	github.com/micro/go-plugins/sync/leader/consul/v2 v2.3.0
 	github.com/micro/go-plugins/sync/lock/consul/v2 v2.3.0
