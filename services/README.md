@@ -43,25 +43,6 @@
     - [mq](./test/mq.go) - 消息队列例子
     - [transport](./test/transport.go) - transport例子
 ---
-### weixin
-微信对接服务
----
-### admin
-后台管理员服务
----
-### ticket
-票务服务
-
-### support
-支撑服务
-- 评论
-- 客服
-
-### promotion
-推广服务
-- 开屏广告
-- 主页跑马灯
-
 
 
 
