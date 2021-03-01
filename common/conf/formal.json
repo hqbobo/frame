@@ -1,0 +1,43 @@
+{
+  "registry":{
+    "type":"consul",
+    "addrs":["192.168.0.12:38500"]
+  },
+  "broker":{
+    "type":"kafka",
+    "addrs":["192.168.0.130:9092"]
+  },
+  "cache":{
+    "type":"redis",
+    "pass":"",
+    "addrs":["192.168.0.13:30002"]
+  },
+  "dlock":{
+    "type":"redis",
+    "addr":"192.168.0.11:30002"
+  },
+  "tracelink":"",
+  "service":{
+    "ttl": 30,
+    "interval":15
+  },
+  "dbconfig":{
+    "types":"mysql",
+    "mysqlconfig":{
+      "write":[{
+        "user": "root",
+        "pwd": "golang",
+        "host": "192.168.0.11",
+        "port": 52264,
+        "db": "newcms"
+      }],
+      "read":[{
+        "user": "root",
+        "pwd": "golang",
+        "host": "192.168.0.11",
+        "port": 52264,
+        "db": "newcms"
+      }]
+    }
+  }
+}

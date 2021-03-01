@@ -1,0 +1,12 @@
+PGreen=$(PRINT) "\033[32m"
+#红色打印
+PRed=$(PRINT) "\033[31m"
+#黄色打印
+PYellow=$(PRINT) "\033[33m"
+#蓝色打印
+PBlue=$(PRINT) "\033[34m"
+#红底白字
+PRW=$(PRINT) "\033[41m"
+PClear="\033[0m"
+
+export PRINT PGreen PClear PRed PYellow PBlue PRW

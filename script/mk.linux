@@ -1,0 +1,2 @@
+export GOOS=linux
+export CGO_ENABLED=0

@@ -1,0 +1,88 @@
+CWD=$(shell pwd)
+export CWD
+ROOT=$(shell cd ..; pwd)
+export ROOT
+export TOOL=$(ROOT)/script/tool
+
+# Go 基础信息
+GOCMD=go
+export GOCMD
+GOBUILD=$(GOCMD) build
+export GOBUILD
+GOCLEAN=$(GOCMD) clean
+export GOCLEAN
+GOTEST=$(GOCMD) test
+export GOTEST
+GOGET=$(GOCMD) get
+export GOGET
+export GO111MODULE=on
+
+#API目录
+APIROOT=$(ROOT)/api
+export APIROOT
+
+#微服务目录
+BINROOT=$(ROOT)/services
+export BINROOT
+
+#配置目录
+CONFROOT=$(ROOT)/common/conf
+export CONFROOT
+
+#脚本目录
+SCRITP=$(ROOT)/script
+export SCRITP
+
+APPROOT=../src/portals/app/
+
+BIN=bin
+export BIN
+
+#shell 命令行
+CD=cd
+export CD
+MKDIR=mkdir
+export MKDIR
+
+LOS=$(shell uname)
+export LOS
+$(warning "当前在$(LOS)系统下进行编译")
+ifeq "$(LOS)" "Darwin"
+    CP=cp -R
+    export CP
+    RM=rm -Rf
+    export RM
+    PRINT=echo
+    export EMTPYCMD=grep -rl ',omitempty' ./*.pb.go | xargs sed -i "" "s/,omitempty//g"
+    export EXPORTTOOL=export PATH=$(PATH):$(TOOL)
+    export V2CMD=grep -rl 'go-micro' ./*.pb.micro.go | xargs sed -i "" "s/go-micro/go-micro\/v2/g"
+else
+    CP=cp -r
+    export CP
+    RM=rm -rf
+    export RM
+    PRINT=echo -e
+    export EMTPYCMD=sed -i "s/,omitempty//g" *.pb.go
+    export EXPORTTOOL=export PATH=$(PATH):$(TOOL)
+    export V2CMD=sed -i "s/go-micro/go-micro\/v2/g" *.pb.micro.go
+endif
+
+Q=@
+export Q
+
+#部署配置
+ifdef MODE
+RUNMODE=$(MODE)
+else
+RUNMODE=develop
+endif
+export RUNMODE
+
+
+#调试信息
+DEBUGLOG=log
+export DEBUGLOG
+
+HARBOR=
+VER=latest
+export HARBOR VER

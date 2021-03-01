@@ -1,0 +1,12 @@
+#绿色打印
+PGreen=$(PRINT)
+#红色打印
+PRed=$(PRINT)
+#黄色打印
+PYellow=$(PRINT)
+#蓝色打印
+PBlue=$(PRINT)
+#红底白字
+PRW=$(PRINT)
+PClear=""
+export PRINT PGreen PClear PRed PYellow PBlue PRW

@@ -1,0 +1,6 @@
+DEBU 17:02:49.664 log_test.go:18 Test_Log Debug
+INFO 17:02:49.664 log_test.go:19 Test_Log Info
+NOTI 17:02:49.664 log_test.go:20 Test_Log Notice
+WARN 17:02:49.664 log_test.go:21 Test_Log Warning
+ERRO 17:02:49.664 log_test.go:22 Test_Log Error
+CRIT 17:02:49.664 log_test.go:23 Test_Log Critical
