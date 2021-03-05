@@ -11,6 +11,7 @@ var (
 	e *MysqlEngine
 )
 
+var ErrInsertZero = errors.New("执行数量为0")
 var ErrNotFound = errors.New("没找到")
 var ErrUpdateFail = errors.New("没找到更新对象")
 var ErrDeleteFail = errors.New("没找到删除对象")
