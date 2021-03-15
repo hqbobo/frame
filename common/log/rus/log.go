@@ -329,29 +329,28 @@ func Trace(format string, args ...interface{}) {
 	log.Trace(callerPrettyfier() + fmt.Sprintf(format, args...))
 }
 
-func Fatalf(args ...interface{}){
-	log.Fatal(callerPrettyfier() + fmt.Sprint( args...))
+func Fatalf(args ...interface{}) {
+	log.Fatal(callerPrettyfier() + fmt.Sprint(args...))
 }
-func Errorf(args ...interface{}){
-	log.Error(callerPrettyfier() + fmt.Sprint( args...))
-}
-
-func Warnf(args ...interface{}){
-	log.Warn(callerPrettyfier() + fmt.Sprint( args...))
+func Errorf(args ...interface{}) {
+	log.Error(callerPrettyfier() + fmt.Sprint(args...))
 }
 
-func Infof(args ...interface{}){
-	log.Info(callerPrettyfier() + fmt.Sprint( args...))
+func Warnf(args ...interface{}) {
+	log.Warn(callerPrettyfier() + fmt.Sprint(args...))
 }
 
-func Debugf(args ...interface{}){
-	log.Debug(callerPrettyfier() + fmt.Sprint( args...))
+func Infof(args ...interface{}) {
+	log.Info(callerPrettyfier() + fmt.Sprint(args...))
 }
 
-func Tracef(args ...interface{}){
-	log.Trace(callerPrettyfier() + fmt.Sprint( args...))
+func Debugf(args ...interface{}) {
+	log.Debug(callerPrettyfier() + fmt.Sprint(args...))
 }
 
+func Tracef(args ...interface{}) {
+	log.Trace(callerPrettyfier() + fmt.Sprint(args...))
+}
 
 func lastFname(fname string) string {
 	flen := len(fname)
