@@ -13,6 +13,7 @@ import (
 	"github.com/hqbobo/frame/common/dcache"
 	"github.com/hqbobo/frame/common/errors"
 	"github.com/hqbobo/frame/common/log"
+	"github.com/hqbobo/frame/common/nsq"
 	"github.com/hqbobo/frame/common/queue"
 	"github.com/hqbobo/frame/db"
 
@@ -53,6 +54,7 @@ type Service struct {
 	config  *conf.GlobalConfig
 	lead    leader.Leader
 	q       *queue.Queue
+	nsq     *nsq.Nsq
 }
 
 // GetLock 获取
@@ -69,13 +71,24 @@ func (svc *Service) Client() client.Client { return svc.service.Client() }
 // Server Server
 func (svc *Service) Server() server.Server { return svc.service.Server() }
 
+//Consumer 创建消费者
+func (svc *Service) Consumer(topic, channel string, f func(msg []byte)) error {
+	return nil
+}
+
 // Publish 用于发送带回执消息 保证消息送达一个接收端
 func (svc *Service) Publish(topic string, data []byte) error {
+	if svc.config.Broker.Type == "nsq" {
+		return svc.nsq.Publish(topic, data)
+	}
 	return svc.q.Publish(topic, data)
 }
 
 // PublishDelay 用于发送延迟ms带回执消息 保证消息送达一个接收端
 func (svc *Service) PublishDelay(topic string, data []byte, ms int) error {
+	if svc.config.Broker.Type == "nsq" {
+		return svc.nsq.DeferredPublish(topic, time.Duration(ms)*time.Second, data)
+	}
 	return svc.q.PublishDelay(topic, data, ms)
 }
 
@@ -83,7 +96,12 @@ func (svc *Service) PublishDelay(topic string, data []byte, ms int) error {
 // f func(data []byte, retrans bool) bool
 // retrans 是否为重传消息
 // 当返回失败的时候 会触发延迟重传
-func (svc *Service) Consume(topic string, f func(data []byte, retrans int) bool) error {
+func (svc *Service) Consume(topic, channel string, f func(data []byte, retrans int) bool) error {
+	if svc.config.Broker.Type == "nsq" {
+		return svc.nsq.Consumer(topic, channel, func(msg []byte) {
+			f(msg, 0)
+		})
+	}
 	return svc.q.Consume(topic, f)
 }
 
@@ -218,6 +236,8 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 		log.Infof("消息队列使用rabbitmq")
 		os.Setenv("MICRO_BROKER", "rabbitmq")
 		os.Setenv("MICRO_BROKER_ADDRESS", config.Broker.Addrs[0])
+	case "nsq":
+		log.Infof("消息队列使用nsq")
 	default:
 		log.Infoln("使用默认注册中心")
 
@@ -253,6 +273,9 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 		if err != nil {
 			log.Error("Queue启动失败", err)
 		}
+	}
+	if config.Broker.Type == "nsq" {
+		svc.nsq = nsq.NewNsq(config.Broker.Addrs)
 	}
 	return svc
 }

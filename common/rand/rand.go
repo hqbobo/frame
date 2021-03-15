@@ -114,3 +114,11 @@ func RateToExecWithIn(rate, max int) bool {
 	}
 	return false
 }
+
+//IntRand rand一个范围值
+func IntRand(min, max int) int {
+	if min >= max {
+		return max
+	}
+	return rand.Intn(max-min) + min
+}

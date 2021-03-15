@@ -29,6 +29,7 @@ require (
 	github.com/micro/go-plugins/sync/lock/redis/v2 v2.3.0
 	github.com/micro/go-plugins/wrapper/trace/opentracing/v2 v2.3.0
 	github.com/micro/protoc-gen-micro v1.0.0
+	github.com/nsqio/go-nsq v1.0.8
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5
 	github.com/openzipkin/zipkin-go v0.2.1
