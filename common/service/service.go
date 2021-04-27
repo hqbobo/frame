@@ -35,6 +35,7 @@ import (
 	//初始化
 	_ "github.com/micro/go-plugins/broker/kafka/v2"
 	//初始化
+	_ "github.com/micro/go-plugins/broker/nsq/v2"
 	_ "github.com/micro/go-plugins/broker/rabbitmq/v2"
 	"github.com/micro/go-plugins/registry/consul/v2"
 	leaderconsul "github.com/micro/go-plugins/sync/leader/consul/v2"
@@ -238,6 +239,8 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 		os.Setenv("MICRO_BROKER_ADDRESS", config.Broker.Addrs[0])
 	case "nsq":
 		log.Infof("消息队列使用nsq")
+		os.Setenv("MICRO_BROKER", "nsq")
+		os.Setenv("MICRO_BROKER_ADDRESS", config.Broker.Addrs[0])
 	default:
 		log.Infoln("使用默认注册中心")
 

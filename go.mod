@@ -22,6 +22,7 @@ require (
 	github.com/micro/go-micro v1.18.0
 	github.com/micro/go-micro/v2 v2.3.0
 	github.com/micro/go-plugins/broker/kafka/v2 v2.3.0
+	github.com/micro/go-plugins/broker/nsq/v2 v2.3.0
 	github.com/micro/go-plugins/broker/rabbitmq/v2 v2.3.0
 	github.com/micro/go-plugins/registry/consul/v2 v2.3.0
 	github.com/micro/go-plugins/sync/leader/consul/v2 v2.3.0
