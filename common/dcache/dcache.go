@@ -12,6 +12,7 @@ type Dcache interface {
 	Get(key string, data interface{}) bool
 	Set(key string, data interface{}, ttl int) bool
 	Delete(key string) bool
+	ScanDelete(key string) (int, error)
 	Incr(key string, data interface{}) bool
 	IncrBy(key string, data int64) int64
 	ZADD(key string, score float64, member interface{})
