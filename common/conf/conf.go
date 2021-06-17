@@ -2,6 +2,7 @@ package conf
 
 import (
 	"encoding/json"
+
 	"github.com/hqbobo/frame/common/log"
 
 	//"flag"
@@ -40,6 +41,7 @@ type mysqlConn struct {
 	Size     int    `json:"size"`
 	SqlLog   bool   `json:"sqlLog"`
 	Sync     bool   `json:"sync"`
+	Cache    bool   `json:"cache"`
 }
 
 type mysqlConfig struct {

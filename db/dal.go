@@ -90,7 +90,9 @@ func mysqlInit(config *conf.GlobalConfig) error {
 			log.Debugln("mysql write sync")
 		}
 		//a := new(mysql.Stream)
-		e.SetDefaultCacher(cacher)
+		if v.Cache {
+			e.SetDefaultCacher(cacher)
+		}
 		w = append(w, e)
 	}
 	for _, v := range config.DbConfig.MysqlConfig.Read {
@@ -114,7 +116,9 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		//设置字段映射规则
 		e.SetMapper(names.SameMapper{})
 		e.SetMaxIdleConns(v.Size)
-		e.SetDefaultCacher(cacher)
+		if v.Cache {
+			e.SetDefaultCacher(cacher)
+		}
 		r = append(r, e)
 	}
 	group, err := xorm.NewEngineGroup(w[0], r)
