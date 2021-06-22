@@ -246,6 +246,42 @@ func (this *RedisSession) Delete(key string) bool {
 	return true
 }
 
+func (this *RedisSession) ScanDelete(key string) (int, error) {
+	var cursor uint64
+	var n int
+	var err error
+	for {
+		var keys []string
+		//扫描key，每次100条
+		if this.cluster {
+			keys, cursor, err = this.clusterCLi.Scan(ctx, cursor, key, 100).Result()
+		} else {
+			keys, cursor, err = this.client.Scan(ctx, cursor, key, 100).Result()
+		}
+		if err != nil {
+			log.Error("scan", key, "错误:", err.Error())
+			return 0, err
+		}
+		n += len(keys)
+		for _, v := range keys {
+			if this.cluster {
+				_, err = this.clusterCLi.Del(ctx, v).Result()
+			} else {
+				_, err = this.client.Del(ctx, v).Result()
+			}
+			if err != nil {
+				log.Error("删除", key, "错误:", err.Error())
+				return n, err
+			}
+		}
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return n, nil
+}
+
 func (this *RedisSession) Incr(key string, data interface{}) bool {
 	var rsp *redis.IntCmd
 	if this.cluster {
