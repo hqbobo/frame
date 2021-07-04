@@ -81,11 +81,9 @@ func mysqlInit(config *conf.GlobalConfig) error {
 			log.Warnln(err)
 		}
 		log.Debugln("mysql write instance ", dbURL, " is connected")
-
-		//e.SetLogLevel(core.LOG_DEBUG)
-		//设置字段映射规则
 		e.SetMapper(names.SameMapper{})
 		e.SetMaxIdleConns(v.Size)
+		e.ShowSQL(v.SqlLog)
 		if v.Sync == true {
 			log.Debugln("mysql write sync")
 		}
