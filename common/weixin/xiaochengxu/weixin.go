@@ -189,6 +189,8 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code string) (*minimod
 		return nil, err
 	}
 	log.Debug(str.(string))
+	user.OpenId = session.OpenId
+	user.Unionid = session.UnionId
 	log.Debug(user)
 	return user, nil
 }

@@ -1,8 +1,8 @@
 package model
 
 type Watermark struct {
-	Timestamp int64 `json:"timestamp"`
-	Appid     string    `json:"appid"`
+	Timestamp int64  `json:"timestamp"`
+	Appid     string `json:"appid"`
 }
 
 type UserWX struct {
@@ -21,6 +21,8 @@ type UserWX struct {
 type UserPhone struct {
 	PhoneNumber     string    `json:"phoneNumber"`
 	PurePhoneNumber string    `json:"purePhoneNumber"`
-	CountryCode     string       `json:"countryCode"`
+	CountryCode     string    `json:"countryCode"`
 	Watermark       Watermark `json:"watermark"`
+	Unionid         string    `json:"unionId"`
+	OpenId          string    `json:"openId"`
 }
