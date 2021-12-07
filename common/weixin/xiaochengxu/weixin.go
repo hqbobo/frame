@@ -93,7 +93,6 @@ func (this *WeiXinMiniSession) GetAccessToken() (string, error) {
 
 //本地获取access_token
 func (this *WeiXinMiniSession) getToken() (string, error) {
-	log.Warn(this.Token)
 	//检查token是否已经获取和超时
 	if this.Token == "" || this.TimeOut <= time.Now().Unix() {
 		if e := this.reloadToken(); e != nil {
@@ -213,7 +212,7 @@ func (this *WeiXinMiniSession) QrcodeGetUnlimited(sense, page, ver string, c boo
 	d = utils.HttpPost(url, []byte(buf))
 	wxError := new(minimodel.ErrRsp)
 	if err := json.Unmarshal(d, wxError); err == nil {
-		log.Debug(string(buf))
+		log.Debug(wxError)
 		return errors.New(wxError.Errmsg), t, d
 	}
 	return nil, "image/jpeg", d
