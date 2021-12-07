@@ -10,7 +10,7 @@ import (
 var (
 	e *MysqlEngine
 )
-
+var ErrExist = errors.New("数据已经存在")
 var ErrInsertZero = errors.New("执行数量为0")
 var ErrNotFound = errors.New("没找到")
 var ErrUpdateFail = errors.New("没找到更新对象")

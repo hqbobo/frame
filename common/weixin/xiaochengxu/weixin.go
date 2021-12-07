@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/hqbobo/frame/common/log"
 	"github.com/hqbobo/frame/common/utils"
 	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 	"github.com/hqbobo/frame/common/weixin/pay"
 	minimodel "github.com/hqbobo/frame/common/weixin/xiaochengxu/model"
-	"strings"
-	"time"
 )
 
 type MiniTpl struct {
@@ -72,7 +73,7 @@ func (this *WeiXinMiniSession) reloadToken() error {
 		}
 		this.Token = rsp.Access_token
 		this.TimeOut = int64(rsp.Expires_in) + time.Now().Unix()
-		log.Debug("在线获取新的token :", rsp.Access_token, " 超时", time.Unix(this.TimeOut, 0))
+		log.Debug("APPID:["+this.cfg.Appid+"]在线获取新的token :", rsp.Access_token, " 超时", time.Unix(this.TimeOut, 0))
 
 		if rsp.Errcode != 0 {
 			return errors.New(rsp.ErrRsp.Errmsg)
@@ -92,6 +93,7 @@ func (this *WeiXinMiniSession) GetAccessToken() (string, error) {
 
 //本地获取access_token
 func (this *WeiXinMiniSession) getToken() (string, error) {
+	log.Warn(this.Token)
 	//检查token是否已经获取和超时
 	if this.Token == "" || this.TimeOut <= time.Now().Unix() {
 		if e := this.reloadToken(); e != nil {
@@ -193,6 +195,27 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code string) (*minimod
 	user.Unionid = session.UnionId
 	log.Debug(user)
 	return user, nil
+}
+
+func (this *WeiXinMiniSession) QrcodeGetUnlimited(sense, page string, c bool) (e error, t string, d []byte) {
+	var err error
+	if _, err = this.getToken(); err != nil {
+		log.Error(err)
+		return err, t, d
+	}
+	wtc := new(minimodel.QrcodeGetUnlimitedReq)
+	wtc.Scene = sense
+	wtc.Checkpath = c
+	wtc.Page = page
+	buf, _ := json.Marshal(wtc)
+	url := getwxacodeunlimit_url + this.Token
+	d = utils.HttpPost(url, []byte(buf))
+	wxError := new(minimodel.ErrRsp)
+	if err := json.Unmarshal(d, wxError); err == nil {
+		log.Debug(string(buf))
+		return errors.New(wxError.Errmsg), t, d
+	}
+	return nil, "image/jpeg", d
 }
 
 func (this *WeiXinMiniSession) SubscribeMessage(openid, templateid, page string, data interface{}) error {
