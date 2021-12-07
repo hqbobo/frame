@@ -197,7 +197,7 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code string) (*minimod
 	return user, nil
 }
 
-func (this *WeiXinMiniSession) QrcodeGetUnlimited(sense, page string, c bool) (e error, t string, d []byte) {
+func (this *WeiXinMiniSession) QrcodeGetUnlimited(sense, page, ver string, c bool) (e error, t string, d []byte) {
 	var err error
 	if _, err = this.getToken(); err != nil {
 		log.Error(err)
@@ -207,6 +207,7 @@ func (this *WeiXinMiniSession) QrcodeGetUnlimited(sense, page string, c bool) (e
 	wtc.Scene = sense
 	wtc.Checkpath = c
 	wtc.Page = page
+	wtc.Envversion = ver
 	buf, _ := json.Marshal(wtc)
 	url := getwxacodeunlimit_url + this.Token
 	d = utils.HttpPost(url, []byte(buf))
