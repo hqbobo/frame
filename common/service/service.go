@@ -24,11 +24,14 @@ import (
 	_ "github.com/micro/go-micro/v2/broker/nats"
 	//tcpTrans "github.com/micro/go-plugins/transport/tcp"
 	"github.com/micro/go-micro/v2/client"
+	cgrpc "github.com/micro/go-micro/v2/client/grpc"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/config/cmd"
 	"github.com/micro/go-micro/v2/metadata"
 	"github.com/micro/go-micro/v2/registry"
 	"github.com/micro/go-micro/v2/server"
+	sgrpc "github.com/micro/go-micro/v2/server/grpc"
+
 	"github.com/micro/go-micro/v2/sync/leader"
 	"github.com/micro/go-micro/v2/sync/lock"
 
@@ -245,7 +248,6 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 		log.Infoln("使用默认注册中心")
 
 	}
-	os.Setenv("MICRO_CLIENT_POOL_SIZE", "10")
 	cmd.Init()
 	if err := broker.Init(); err != nil {
 		log.Errorf("Broker Init error: %v", err)
@@ -253,19 +255,27 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 	if err := broker.Connect(); err != nil {
 		log.Errorf("Broker Connect error: %v", err)
 	}
+	os.Setenv("MICRO_CLIENT_POOL_SIZE", "200")
 
 	//设置客户端链接数
 	opts = append(opts, micro.Name(name))
 	opts = append(opts, micro.Address(conf.CFG().Host))
 	opts = append(opts, micro.RegisterTTL(time.Second*6))
 	opts = append(opts, micro.RegisterInterval(time.Second*2))
+	opts = append(opts, micro.Server(sgrpc.NewServer(server.Name(name),
+		sgrpc.MaxMsgSize(1024*1024*40))))
+	opts = append(opts, micro.Client(cgrpc.NewClient(
+		client.RequestTimeout(time.Second*60),
+		client.PoolSize(200),
+		cgrpc.MaxSendMsgSize(1024*1024*40),
+		cgrpc.MaxRecvMsgSize(1024*1024*40))))
+	opts = append(opts, micro.WrapClient(newWrapper))
 	if config.Tracelink != "" {
 		//log.Debugf("启动链路追踪:%s", config.Tracelink)
 		goTracing.SetGlobalTracer(newTracer(name, config.Tracelink))
 		opts = append(opts, micro.WrapHandler(wrapperTrace.NewHandlerWrapper(goTracing.GlobalTracer())))
 		opts = append(opts, micro.WrapClient(wrapperTrace.NewClientWrapper(goTracing.GlobalTracer())))
 	}
-	opts = append(opts, micro.WrapClient(newWrapper))
 	//opts = append(opts, micro.Transport(tcpTrans.NewTransport()))
 	svc.service = micro.NewService(opts...)
 	svc.service.Init()
