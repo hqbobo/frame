@@ -7,13 +7,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/hqbobo/frame/common/log"
 	"github.com/hqbobo/frame/common/utils"
 	"github.com/hqbobo/frame/common/weixin/gongzhonghao/handle"
 	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 	"github.com/hqbobo/frame/common/weixin/pay"
-	"strings"
-	"time"
 )
 
 //WeixinCacheInterface 微信緩存接口
@@ -259,6 +260,43 @@ func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interfa
 	wtc.ToUser = openid
 	wtc.Topcolor = topColor
 	wtc.Data = data
+	buf, _ := json.Marshal(wtc)
+	url := weixin_template_url + "?access_token=" + ws.Token
+
+	log.Trace(string(buf))
+	body := utils.HttpPost(url, []byte(buf))
+	wxError := new(wxmodel.ErrRsp)
+	if err := json.Unmarshal(body, wxError); err != nil {
+		return err
+	}
+
+	log.Trace(wxError)
+	if wxError.Errcode != 0 {
+		body := utils.HttpPost(url, []byte(buf))
+		if err := json.Unmarshal(body, wxError); err != nil {
+			return err
+		}
+		if wxError.Errcode != 0 {
+			fmt.Println(wxError)
+			return errors.New(wxError.Errmsg)
+		}
+	}
+	return nil
+}
+
+//SendTemplateMsgJumpMini 发送模板消息
+func (ws *WeiXinSession) SendTemplateMsgJumpMini(openid, templateid string, data interface{}, appid, jump string) error {
+	if _, err := ws.getToken(); err != nil {
+		log.Error(err)
+		return err
+	}
+	wtc := wxmodel.WeixinTemp{}
+	wtc.TemplateId = templateid
+	wtc.ToUser = openid
+	wtc.Topcolor = topColor
+	wtc.Data = data
+	wtc.Mini.Appid = appid
+	wtc.Mini.Pagepath = jump
 	buf, _ := json.Marshal(wtc)
 	url := weixin_template_url + "?access_token=" + ws.Token
 
