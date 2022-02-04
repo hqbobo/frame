@@ -50,6 +50,7 @@ type RedisSession struct {
 
 func newRedis(ip string, pass string) *RedisSession {
 	s := new(RedisSession)
+	s.ip = ip
 	s.pass = pass
 	s.name = GetRandomString(16)
 	s.client = redis.NewClient(&redis.Options{
@@ -80,12 +81,12 @@ func newRedisCluster(ip []string, pass string) *RedisSession {
 var ctx = context.Background()
 
 //监听数据修改事件
-func (this *RedisSession) subscribe() {
+func (rs *RedisSession) subscribe() {
 	var sub *redis.PubSub
-	if this.cluster {
-		this.clusterCLi.Subscribe(ctx, redis_sync_chan)
+	if rs.cluster {
+		rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
 	} else {
-		sub = this.client.Subscribe(ctx, redis_sync_chan)
+		sub = rs.client.Subscribe(ctx, redis_sync_chan)
 	}
 	defer sub.Close()
 	var pub publisher
@@ -102,14 +103,14 @@ func (this *RedisSession) subscribe() {
 				log.Debugf("subscribed to %s", msg.Channel)
 			case *redis.Message:
 				if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
-					if pub.From != this.name {
+					if pub.From != rs.name {
 						//log.Debug("received %s from %s ", msg.Payload, msg.Channel)
 						//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
-						if pub.From != this.name {
+						if pub.From != rs.name {
 							if pub.Act == redis_sync_set {
-								this.mem.Set(pub.Key, pub.Val, pub.Ttl)
+								rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
 							} else if pub.Act == redis_sync_del {
-								this.mem.Delete(pub.Key)
+								rs.mem.Delete(pub.Key)
 							}
 						}
 					}
@@ -126,13 +127,13 @@ func (this *RedisSession) subscribe() {
 }
 
 //消息推送
-func (this *RedisSession) publish(key, val string, ttl int, act int) {
+func (rs *RedisSession) publish(key, val string, ttl int, act int) {
 	p := new(publisher)
 	p.Key = key
 	p.Val = val
 	p.Ttl = ttl
 	p.Act = act
-	p.From = this.name
+	p.From = rs.name
 
 	//转为字符串
 	s, e := json.Marshal(p)
@@ -140,13 +141,13 @@ func (this *RedisSession) publish(key, val string, ttl int, act int) {
 		log.Warnln(e.Error())
 		return
 	}
-	if this.cluster {
-		rsp := this.clusterCLi.Publish(ctx, redis_sync_chan, string(s))
+	if rs.cluster {
+		rsp := rs.clusterCLi.Publish(ctx, redis_sync_chan, string(s))
 		if rsp.Err() != nil {
 			log.Warnln(rsp.Err().Error())
 		}
 	} else {
-		rsp := this.client.Publish(ctx, redis_sync_chan, string(s))
+		rsp := rs.client.Publish(ctx, redis_sync_chan, string(s))
 		if rsp.Err() != nil {
 			log.Warnln(rsp.Err().Error())
 		}
@@ -154,38 +155,38 @@ func (this *RedisSession) publish(key, val string, ttl int, act int) {
 }
 
 //获取超时
-func (this *RedisSession) getTtl(key string) (int, bool) {
+func (rs *RedisSession) getTtl(key string) (int, bool) {
 	var dur *redis.DurationCmd
-	if this.cluster {
-		dur = this.clusterCLi.TTL(ctx, key)
+	if rs.cluster {
+		dur = rs.clusterCLi.TTL(ctx, key)
 	} else {
-		dur = this.client.TTL(ctx, key)
+		dur = rs.client.TTL(ctx, key)
 	}
 	return int(dur.Val().Seconds()), true
 }
 
-func (this *RedisSession) Get(key string, data interface{}) bool {
+func (rs *RedisSession) Get(key string, data interface{}) bool {
 	var s string
-	if !this.mem.Get(key, &s) {
+	if !rs.mem.Get(key, &s) {
 		var str *redis.StringCmd
-		if this.cluster {
-			str = this.clusterCLi.Get(ctx, key)
+		if rs.cluster {
+			str = rs.clusterCLi.Get(ctx, key)
 		} else {
-			str = this.client.Get(ctx, key)
+			str = rs.client.Get(ctx, key)
 		}
 		if str.Err() != nil {
 			log.Warnf("获取key %s 失败, %s", key, str.Err().Error())
 			return false
 		}
 		s = str.Val()
-		if ttl, ok := this.getTtl(key); ok {
+		if ttl, ok := rs.getTtl(key); ok {
 			log.Debugf("load: %s ttl[ %d ] from redis:", str.Val(), ttl)
 			if e := json.Unmarshal([]byte(str.Val()), data); e != nil {
 				log.Warnln(e.Error())
 				return false
 			}
 			//内存提前5秒超时
-			return this.mem.Set(key, s, ttl-5)
+			return rs.mem.Set(key, s, ttl-5)
 		}
 		return false
 	}
@@ -196,7 +197,7 @@ func (this *RedisSession) Get(key string, data interface{}) bool {
 	return true
 }
 
-func (this *RedisSession) Set(key string, data interface{}, ttl int) bool {
+func (rs *RedisSession) Set(key string, data interface{}, ttl int) bool {
 	var rsp *redis.StatusCmd
 	//转为字符串
 	s, e := json.Marshal(data)
@@ -208,55 +209,55 @@ func (this *RedisSession) Set(key string, data interface{}, ttl int) bool {
 	if ttl <= 0 {
 		ttl = redis_item_timeout
 	}
-	if this.cluster {
-		rsp = this.clusterCLi.Set(ctx, key, s, time.Second*time.Duration(ttl))
+	if rs.cluster {
+		rsp = rs.clusterCLi.Set(ctx, key, s, time.Second*time.Duration(ttl))
 	} else {
-		rsp = this.client.Set(ctx, key, s, time.Second*time.Duration(ttl))
+		rsp = rs.client.Set(ctx, key, s, time.Second*time.Duration(ttl))
 	}
 	if rsp.Err() != nil {
 		log.Warnln(rsp.Err().Error())
 	} else {
 		//缓存本地
-		if this.mem != nil {
-			this.mem.Set(key, string(s), ttl)
+		if rs.mem != nil {
+			rs.mem.Set(key, string(s), ttl)
 		}
 		//通告修改
-		go this.publish(key, string(s), ttl, redis_sync_set)
+		go rs.publish(key, string(s), ttl, redis_sync_set)
 		return true
 	}
 	return false
 }
 
-func (this *RedisSession) Delete(key string) bool {
+func (rs *RedisSession) Delete(key string) bool {
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.Del(ctx, key)
+	if rs.cluster {
+		rsp = rs.clusterCLi.Del(ctx, key)
 	} else {
-		rsp = this.client.Del(ctx, key)
+		rsp = rs.client.Del(ctx, key)
 	}
 	if rsp.Err() != nil {
 		log.Warn("删除", key, "错误:", rsp.Err().Error())
 	}
 	//缓存本地
-	if this.mem != nil {
-		this.mem.Delete(key)
+	if rs.mem != nil {
+		rs.mem.Delete(key)
 	}
 	//通告删除
-	go this.publish(key, "", 0, redis_sync_del)
+	go rs.publish(key, "", 0, redis_sync_del)
 	return true
 }
 
-func (this *RedisSession) ScanDelete(key string) (int, error) {
+func (rs *RedisSession) ScanDelete(key string) (int, error) {
 	var cursor uint64
 	var n int
 	var err error
 	for {
 		var keys []string
 		//扫描key，每次100条
-		if this.cluster {
-			keys, cursor, err = this.clusterCLi.Scan(ctx, cursor, key, 100).Result()
+		if rs.cluster {
+			keys, cursor, err = rs.clusterCLi.Scan(ctx, cursor, key, 100).Result()
 		} else {
-			keys, cursor, err = this.client.Scan(ctx, cursor, key, 100).Result()
+			keys, cursor, err = rs.client.Scan(ctx, cursor, key, 100).Result()
 		}
 		if err != nil {
 			log.Error("scan", key, "错误:", err.Error())
@@ -264,10 +265,10 @@ func (this *RedisSession) ScanDelete(key string) (int, error) {
 		}
 		n += len(keys)
 		for _, v := range keys {
-			if this.cluster {
-				_, err = this.clusterCLi.Del(ctx, v).Result()
+			if rs.cluster {
+				_, err = rs.clusterCLi.Del(ctx, v).Result()
 			} else {
-				_, err = this.client.Del(ctx, v).Result()
+				_, err = rs.client.Del(ctx, v).Result()
 			}
 			if err != nil {
 				log.Error("删除", key, "错误:", err.Error())
@@ -282,12 +283,12 @@ func (this *RedisSession) ScanDelete(key string) (int, error) {
 	return n, nil
 }
 
-func (this *RedisSession) Incr(key string, data interface{}) bool {
+func (rs *RedisSession) Incr(key string, data interface{}) bool {
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.Incr(ctx, key)
+	if rs.cluster {
+		rsp = rs.clusterCLi.Incr(ctx, key)
 	} else {
-		rsp = this.client.Incr(ctx, key)
+		rsp = rs.client.Incr(ctx, key)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("Incr key %s 失败, %s", key, rsp.Err().Error())
@@ -297,12 +298,12 @@ func (this *RedisSession) Incr(key string, data interface{}) bool {
 	return true
 }
 
-func (this *RedisSession) IncrBy(key string, data int64) int64 {
+func (rs *RedisSession) IncrBy(key string, data int64) int64 {
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.IncrBy(ctx, key, data)
+	if rs.cluster {
+		rsp = rs.clusterCLi.IncrBy(ctx, key, data)
 	} else {
-		rsp = this.client.IncrBy(ctx, key, data)
+		rsp = rs.client.IncrBy(ctx, key, data)
 	}
 	if rsp.Err() != nil {
 		log.Warnf("Incrby key %s 失败, %s", key, rsp.Err().Error())
@@ -310,12 +311,12 @@ func (this *RedisSession) IncrBy(key string, data int64) int64 {
 	return rsp.Val()
 }
 
-func (this *RedisSession) Check(key string) bool {
+func (rs *RedisSession) Check(key string) bool {
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.Exists(ctx, key)
+	if rs.cluster {
+		rsp = rs.clusterCLi.Exists(ctx, key)
 	} else {
-		rsp = this.client.Exists(ctx, key)
+		rsp = rs.client.Exists(ctx, key)
 	}
 	if rsp.Val() == 1 {
 		return true
@@ -323,21 +324,21 @@ func (this *RedisSession) Check(key string) bool {
 	return false
 }
 
-func (this *RedisSession) CheckMem(key string) bool {
-	return this.mem.Check(key)
+func (rs *RedisSession) CheckMem(key string) bool {
+	return rs.mem.Check(key)
 }
 
 //ZADD 添加到有序集合里面 比如存用户就是 zadd user 1 1001
-func (this *RedisSession) ZADD(key string, score float64, member interface{}) {
+func (rs *RedisSession) ZADD(key string, score float64, member interface{}) {
 	data := &redis.Z{
 		Score:  score,
 		Member: member,
 	}
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZAdd(ctx, key, data)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZAdd(ctx, key, data)
 	} else {
-		rsp = this.client.ZAdd(ctx, key, data)
+		rsp = rs.client.ZAdd(ctx, key, data)
 	}
 	if rsp.Err() != nil {
 		log.Warnf("ZADD key %s 失败, %s", key, rsp.Err().Error())
@@ -345,13 +346,13 @@ func (this *RedisSession) ZADD(key string, score float64, member interface{}) {
 }
 
 //Zrange 遍历有序集合
-func (this *RedisSession) Zrange(key string, start, stop int64) []string {
+func (rs *RedisSession) Zrange(key string, start, stop int64) []string {
 	//data := &redis.StringSliceCmd{}
 	var rsp *redis.StringSliceCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZRange(ctx, key, start, stop)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZRange(ctx, key, start, stop)
 	} else {
-		rsp = this.client.ZRange(ctx, key, start, stop)
+		rsp = rs.client.ZRange(ctx, key, start, stop)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("ZADD key %s 失败, %s", key, rsp.Err().Error())
@@ -362,13 +363,13 @@ func (this *RedisSession) Zrange(key string, start, stop int64) []string {
 }
 
 //ZRangeWithScores 遍历有序集合
-func (this *RedisSession) ZRangeWithScores(key string, start, stop int64) []redis.Z {
+func (rs *RedisSession) ZRangeWithScores(key string, start, stop int64) []redis.Z {
 	//data := &redis.StringSliceCmd{}
 	var rsp *redis.ZSliceCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZRangeWithScores(ctx, key, start, stop)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZRangeWithScores(ctx, key, start, stop)
 	} else {
-		rsp = this.client.ZRangeWithScores(ctx, key, start, stop)
+		rsp = rs.client.ZRangeWithScores(ctx, key, start, stop)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("ZADD key %s 失败, %s", key, rsp.Err().Error())
@@ -379,13 +380,13 @@ func (this *RedisSession) ZRangeWithScores(key string, start, stop int64) []redi
 }
 
 //ZRangeWithScores 遍历有序集合
-func (this *RedisSession) ZRevRangeWithScores(key string, start, stop int64) []redis.Z {
+func (rs *RedisSession) ZRevRangeWithScores(key string, start, stop int64) []redis.Z {
 	//data := &redis.StringSliceCmd{}
 	var rsp *redis.ZSliceCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZRevRangeWithScores(ctx, key, start, stop)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZRevRangeWithScores(ctx, key, start, stop)
 	} else {
-		rsp = this.client.ZRevRangeWithScores(ctx, key, start, stop)
+		rsp = rs.client.ZRevRangeWithScores(ctx, key, start, stop)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("ZADD key %s 失败, %s", key, rsp.Err().Error())
@@ -396,13 +397,13 @@ func (this *RedisSession) ZRevRangeWithScores(key string, start, stop int64) []r
 }
 
 //ZREM 删除有序集合中某个元素
-func (this *RedisSession) ZREM(key string, member interface{}) {
+func (rs *RedisSession) ZREM(key string, member interface{}) {
 	//data := &redis.StringSliceCmd{}
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZRem(ctx, key, member)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZRem(ctx, key, member)
 	} else {
-		rsp = this.client.ZRem(ctx, key, member)
+		rsp = rs.client.ZRem(ctx, key, member)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("Zrem key %s 失败, %s", key, rsp.Err().Error())
@@ -412,13 +413,13 @@ func (this *RedisSession) ZREM(key string, member interface{}) {
 }
 
 //Zcard 返回集合数
-func (this *RedisSession) Zcard(key string) int64 {
+func (rs *RedisSession) Zcard(key string) int64 {
 	//data := &redis.StringSliceCmd{}
 	var rsp *redis.IntCmd
-	if this.cluster {
-		rsp = this.clusterCLi.ZCard(ctx, key)
+	if rs.cluster {
+		rsp = rs.clusterCLi.ZCard(ctx, key)
 	} else {
-		rsp = this.client.ZCard(ctx, key)
+		rsp = rs.client.ZCard(ctx, key)
 	}
 	if rsp.Err() != nil {
 		log.Warnln("Zrem key %s 失败, %s", key, rsp.Err().Error())
@@ -435,10 +436,10 @@ func (this *RedisSession) Zcard(key string) int64 {
 * @param:value redis中的value
 * @param:tm 	redis中的超时
  */
-func (this *RedisSession) SetNx(key string, value interface{}, tm int) (bool, error) {
-	if this.cluster {
-		return this.clusterCLi.SetNX(ctx, key, value, time.Second*time.Duration(tm)).Result()
+func (rs *RedisSession) SetNx(key string, value interface{}, tm int) (bool, error) {
+	if rs.cluster {
+		return rs.clusterCLi.SetNX(ctx, key, value, time.Second*time.Duration(tm)).Result()
 	} else {
-		return this.client.SetNX(ctx, key, value, time.Second*time.Duration(tm)).Result()
+		return rs.client.SetNX(ctx, key, value, time.Second*time.Duration(tm)).Result()
 	}
 }

@@ -21,6 +21,7 @@ type Limiter struct {
 
 var gLimiter *Limiter
 var defaultRate = 3 //默认每秒10次
+var Unlimit = -1
 
 func init() {
 	gLimiter = new(Limiter)
@@ -34,6 +35,9 @@ func init() {
 
 // Try 检查关键字
 func (l *Limiter) Try(s string) bool {
+	if l.rate == Unlimit {
+		return true
+	}
 	if v, ok := l.maps.Load(s); ok {
 		ld := v.(*limiterData)
 		//判断是否过期
