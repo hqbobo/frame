@@ -75,11 +75,6 @@ func (svc *Service) Client() client.Client { return svc.service.Client() }
 // Server Server
 func (svc *Service) Server() server.Server { return svc.service.Server() }
 
-//Consumer 创建消费者
-func (svc *Service) Consumer(topic, channel string, f func(msg []byte)) error {
-	return nil
-}
-
 // Publish 用于发送带回执消息 保证消息送达一个接收端
 func (svc *Service) Publish(topic string, data []byte) error {
 	if svc.config.Broker.Type == "nsq" {
@@ -373,7 +368,7 @@ func _brokerMsgParse(msg *BrokerMessage) *broker.Message {
 	return out
 }
 
-// Publish 消息队列发送用户全局广播
+//Deprecated Publish 消息队列发送用户全局广播
 func Publish(topic string, msg *BrokerMessage, opts ...broker.PublishOption) error {
 	return broker.Publish(topic, _brokerMsgParse(msg), opts...)
 }
@@ -381,7 +376,7 @@ func Publish(topic string, msg *BrokerMessage, opts ...broker.PublishOption) err
 //BrokerHanlde 消息队列定义
 type BrokerHanlde = broker.Handler
 
-// Subscribe 消息队列接收
+//Deprecated Subscribe 消息队列接收
 func Subscribe(topic string, handler BrokerHanlde, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
 	return broker.Subscribe(topic, handler, opts...)
 }

@@ -388,7 +388,6 @@ github.com/micro/cli/v2 v2.1.2/go.mod h1:EguNh6DAoWKm9nmk+k/Rg0H3lQnDxqzu5x5srOt
 github.com/micro/go-micro v1.16.0/go.mod h1:A0F58bHLh2m0LAI9QyhvmbN8c1cxhAZo3cM6s+iDsrM=
 github.com/micro/go-micro v1.18.0 h1:gP70EZVHpJuUIT0YWth192JmlIci+qMOEByHm83XE9E=
 github.com/micro/go-micro v1.18.0/go.mod h1:klwUJL1gkdY1MHFyz+fFJXn52dKcty4hoe95Mp571AA=
-github.com/micro/go-plugins v1.5.1 h1:swcFD7ynCTUo98APqIEIbPu2XMd6yVGTnI8PqdnCwOQ=
 github.com/micro/go-plugins/broker/kafka/v2 v2.3.0 h1:VuMxNMOeIPgklgNXz9kZ9h+Xsg4W+iSngR6Sk3ep9Xc=
 github.com/micro/go-plugins/broker/kafka/v2 v2.3.0/go.mod h1:PXFX3ioNEVO3PT21BC1j06aOtzfUnX0qj9jhHEwLzmM=
 github.com/micro/go-plugins/broker/nsq/v2 v2.3.0 h1:/HGutN+0Lg+ABrBwa4UGTt1AsFNHLHrK9kMwEojiRoU=

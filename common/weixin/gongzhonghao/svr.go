@@ -4,20 +4,21 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/xml"
-	"github.com/hqbobo/frame/common/log"
-	"github.com/hqbobo/frame/common/weixin/gongzhonghao/handle"
-	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
+
+	"github.com/hqbobo/frame/common/log"
+	"github.com/hqbobo/frame/common/weixin/gongzhonghao/handle"
+	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 )
 
 var cfgs []wxmodel.WeixinCfg
 var gSess *WeiXinSession
 
 func test(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("thisistest"))
+	w.Write([]byte("fromweixin"))
 }
 func index(w http.ResponseWriter, r *http.Request) {
 	var s []string
@@ -100,6 +101,7 @@ func svrInit(sess *WeiXinSession, cb handle.WeixinMsgHandleInterface, event hand
 
 func svrsInit(cfgs []wxmodel.WeixinCfg, cb handle.WeixinMsgHandleInterface, event handle.WeixinEventHandleInterface) {
 	handle.Init(cb, event)
+	http.HandleFunc("/", test) //设置访问的路由
 	for _, v := range cfgs {
 		http.HandleFunc("/"+v.Appid, index) //设置访问的路由
 		log.Infof("注册微信路由:/" + v.Appid)
