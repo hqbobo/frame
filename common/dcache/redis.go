@@ -164,24 +164,24 @@ func (rs *RedisSession) getTtl(key string) (int, bool) {
 	}
 	return int(dur.Val().Seconds()), true
 }
-func (this *RedisSession) HGet(key, field string) string {
-	if this.cluster {
-		return this.clusterCLi.HGet(ctx, key, field).String()
+func (rs *RedisSession) HGet(key, field string) string {
+	if rs.cluster {
+		return rs.clusterCLi.HGet(ctx, key, field).String()
 	}
-	return this.client.HGet(ctx, key, field).String()
+	return rs.client.HGet(ctx, key, field).String()
 }
-func (this *RedisSession) HSet(key, field, data string) error {
-	if this.cluster {
-		return this.clusterCLi.HSet(ctx, key, data).Err()
+func (rs *RedisSession) HSet(key, field, data string) error {
+	if rs.cluster {
+		return rs.clusterCLi.HSet(ctx, key, []string{field, data}).Err()
 	}
-	return this.client.HSet(ctx, key, data).Err()
+	return rs.client.HSet(ctx, key, data).Err()
 }
 
-func (this *RedisSession) HDel(key, field string) error {
-	if this.cluster {
-		return this.clusterCLi.HDel(ctx, key).Err()
+func (rs *RedisSession) HDel(key, field string) error {
+	if rs.cluster {
+		return rs.clusterCLi.HDel(ctx, key).Err()
 	}
-	return this.client.HDel(ctx, key).Err()
+	return rs.client.HDel(ctx, key).Err()
 }
 
 func (rs *RedisSession) Get(key string, data interface{}) bool {
