@@ -14,12 +14,16 @@ type WeiXinSessions struct {
 }
 
 //NewSessions 新的微信批量主结构
-func NewSessions(cfg []model.WeixinCfg) *WeiXinSessions {
+func NewSessions(cfg []model.WeixinCfg, cache WeixinCacheInterface) *WeiXinSessions {
 	s := new(WeiXinSessions)
 	s.cfgs = cfg
 	cfgs = cfg
 	for _, v := range cfg {
-		s.sess = append(s.sess, NewSession(v))
+		sess := NewSession(v)
+		s.sess = append(s.sess, sess)
+		if cache != nil {
+			sess.SetCacheInterface(cache)
+		}
 	}
 	return s
 }
@@ -32,7 +36,7 @@ func (wss *WeiXinSessions) Run(cb handle.WeixinMsgHandleInterface, eventcb handl
 		if _, e = v.getToken(); e != nil {
 			log.Debug(e)
 		}
-		v.GetMaterial()
+		// v.GetMaterial()
 		v.publicKey, e = pay.GetPublickKey(v.cfg.MchId, v.cfg.KeyFile, v.cfg.CertFile, v.cfg.WXRoot, v.cfg.APIKey)
 		if e != nil {
 			log.Warn(e)

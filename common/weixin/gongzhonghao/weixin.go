@@ -53,7 +53,7 @@ func (ws *WeiXinSession) reloadToken() error {
 	if ws.cache != nil {
 		if ws.cache.Get(CacheTokenName+ws.cfg.Appid, &token) {
 			//更新本地内存
-			log.Debug("读取缓存token到本地:", token.Token, " 到期时间:", time.Now().Add(time.Second*time.Duration(token.TimeOut-time.Now().Unix())).String())
+			log.Debug("["+ws.cfg.Appid+"]读取缓存token到本地:", token.Token, " 到期时间:", time.Now().Add(time.Second*time.Duration(token.TimeOut-time.Now().Unix())).String())
 			ws.weixntoken = token
 		}
 	}
