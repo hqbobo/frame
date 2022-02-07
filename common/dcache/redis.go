@@ -163,6 +163,25 @@ func (this *RedisSession) getTtl(key string) (int, bool) {
 	}
 	return int(dur.Val().Seconds()), true
 }
+func (this *RedisSession) HGet(key, field string) string {
+	if this.cluster {
+		return this.clusterCLi.HGet(ctx, key, field).String()
+	}
+	return this.client.HGet(ctx, key, field).String()
+}
+func (this *RedisSession) HSet(key, field, data string) error {
+	if this.cluster {
+		return this.clusterCLi.HSet(ctx, key, data).Err()
+	}
+	return this.client.HSet(ctx, key, data).Err()
+}
+
+func (this *RedisSession) HDel(key, field string) error {
+	if this.cluster {
+		return this.clusterCLi.HDel(ctx, key).Err()
+	}
+	return this.client.HDel(ctx, key).Err()
+}
 
 func (this *RedisSession) Get(key string, data interface{}) bool {
 	var s string
@@ -179,7 +198,7 @@ func (this *RedisSession) Get(key string, data interface{}) bool {
 		}
 		s = str.Val()
 		if ttl, ok := this.getTtl(key); ok {
-			log.Debugf("load: %s ttl[ %d ] from redis:", str.Val(), ttl)
+			// log.Debugf("load: %s ttl[ %d ] from redis:", str.Val(), ttl)
 			if e := json.Unmarshal([]byte(str.Val()), data); e != nil {
 				log.Warnln(e.Error())
 				return false

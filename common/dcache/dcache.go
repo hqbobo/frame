@@ -9,6 +9,9 @@ import (
 type Dcache interface {
 	Check(key string) bool
 	CheckMem(key string) bool
+	HGet(key, field string) string
+	HSet(key, field, data string) error
+	HDel(key, field string) error
 	Get(key string, data interface{}) bool
 	Set(key string, data interface{}, ttl int) bool
 	Delete(key string) bool
