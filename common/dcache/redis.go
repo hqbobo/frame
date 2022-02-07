@@ -164,11 +164,11 @@ func (rs *RedisSession) getTtl(key string) (int, bool) {
 	}
 	return int(dur.Val().Seconds()), true
 }
-func (rs *RedisSession) HGet(key, field string) string {
+func (rs *RedisSession) HGet(key, field string) (string, error) {
 	if rs.cluster {
-		return rs.clusterCLi.HGet(ctx, key, field).String()
+		return rs.clusterCLi.HGet(ctx, key, field).Result()
 	}
-	return rs.client.HGet(ctx, key, field).String()
+	return rs.client.HGet(ctx, key, field).Result()
 }
 func (rs *RedisSession) HSet(key, field, data string) error {
 	if rs.cluster {
