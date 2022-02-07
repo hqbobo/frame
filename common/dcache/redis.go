@@ -174,7 +174,7 @@ func (rs *RedisSession) HSet(key, field, data string) error {
 	if rs.cluster {
 		return rs.clusterCLi.HSet(ctx, key, field, data).Err()
 	}
-	return rs.client.HSet(ctx, key, data).Err()
+	return rs.client.HSet(ctx, key, field, data).Err()
 }
 
 func (rs *RedisSession) HDel(key, field string) error {
