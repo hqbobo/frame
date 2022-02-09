@@ -1,6 +1,6 @@
 module github.com/hqbobo/frame
 
-go 1.14
+go 1.17
 
 replace (
 	github.com/asim/go-micro/v2 => github.com/micro/go-micro/v2 v2.3.0
