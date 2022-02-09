@@ -36,7 +36,7 @@ import (
 	"github.com/micro/go-micro/v2/sync/lock"
 
 	//初始化
-	_ "github.com/micro/go-plugins/broker/kafka/v2"
+	// _ "github.com/micro/go-plugins/broker/kafka/v2"
 	//初始化
 	_ "github.com/micro/go-plugins/broker/nsq/v2"
 	_ "github.com/micro/go-plugins/broker/rabbitmq/v2"
@@ -223,10 +223,10 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 	}
 
 	switch config.Broker.Type {
-	case "kafka":
-		os.Setenv("MICRO_BROKER", "kafka")
-		os.Setenv("MICRO_BROKER_ADDRESS", buildAddr(config.Broker.Addrs))
-		log.Infoln("消息队列使用kafka")
+	// case "kafka":
+	// 	os.Setenv("MICRO_BROKER", "kafka")
+	// 	os.Setenv("MICRO_BROKER_ADDRESS", buildAddr(config.Broker.Addrs))
+	// 	log.Infoln("消息队列使用kafka")
 	case "nats":
 		log.Infof("消息队列使用nats")
 		os.Setenv("MICRO_BROKER", "nats")

@@ -21,7 +21,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2
 	github.com/micro/go-micro v1.18.0
 	github.com/micro/go-micro/v2 v2.3.0
-	github.com/micro/go-plugins/broker/kafka/v2 v2.3.0
 	github.com/micro/go-plugins/broker/nsq/v2 v2.3.0
 	github.com/micro/go-plugins/broker/rabbitmq/v2 v2.3.0
 	github.com/micro/go-plugins/registry/consul/v2 v2.3.0
