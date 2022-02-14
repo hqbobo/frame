@@ -84,7 +84,7 @@ var ctx = context.Background()
 func (rs *RedisSession) subscribe() {
 	var sub *redis.PubSub
 	if rs.cluster {
-		rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
+		sub = rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
 	} else {
 		sub = rs.client.Subscribe(ctx, redis_sync_chan)
 	}
