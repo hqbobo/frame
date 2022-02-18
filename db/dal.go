@@ -10,10 +10,8 @@ import (
 
 	//初始化mysql
 	_ "github.com/go-sql-driver/mysql"
-	"xorm.io/core"
 	"xorm.io/xorm"
 	"xorm.io/xorm/caches"
-	xlog "xorm.io/xorm/log"
 	"xorm.io/xorm/names"
 )
 
@@ -41,21 +39,6 @@ type DbConfig struct {
 	MysqlConfig MysqlConfig
 }
 
-type engine interface {
-	Init(write, read *[]xorm.Engine)
-	GetReadEngine() *xorm.Engine
-	GetWriteEngine() *xorm.Engine
-}
-
-func mysqlsync(e *xorm.Engine) {
-	e.SetMapper(core.SameMapper{})
-	//同步数据库
-	// syncArray := []interface{}{
-	// }
-	// log.Infoln(syncArray)
-	// log.Debugln(e.Sync2(syncArray...))
-}
-
 func mysqlInit(config *conf.GlobalConfig) error {
 	w := make([]*xorm.Engine, 0)
 	r := make([]*xorm.Engine, 0)
@@ -73,21 +56,18 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		e.ShowSQL(v.SqlLog)
 		err = e.Ping()
 
-		var loger xlog.Logger
-		loger = new(Logger)
+		loger := new(Logger)
 		e.SetLogger(loger)
-
 		if err != nil {
 			log.Warnln(err)
 		}
-		log.Debugln("mysql write instance ", dbURL, " is connected")
+		log.Debugln("mysql 实例 ", dbURL, " 连接成功")
 		e.SetMapper(names.SameMapper{})
-		e.SetMaxIdleConns(v.Size)
+		e.SetMaxOpenConns(v.Size)
 		e.ShowSQL(v.SqlLog)
 		if v.Sync == true {
 			log.Debugln("mysql write sync")
 		}
-		//a := new(mysql.Stream)
 		if v.Cache {
 			e.SetDefaultCacher(cacher)
 		}
@@ -102,18 +82,17 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		}
 		err = e.Ping()
 		log.Debugln(v)
-		var loger xlog.Logger
-		loger = new(Logger)
+		loger := new(Logger)
 		e.SetLogger(loger)
 		if err != nil {
 			log.Warnln(err)
 		}
-		log.Debugln("mysql read instance ", dbURL, " is connected")
+		log.Debugln("mysql 只读实例 ", dbURL, " 连接成功")
 		log.Debug(e)
 		e.ShowSQL(v.SqlLog)
 		//设置字段映射规则
 		e.SetMapper(names.SameMapper{})
-		e.SetMaxIdleConns(v.Size)
+		e.SetMaxOpenConns(v.Size)
 		if v.Cache {
 			e.SetDefaultCacher(cacher)
 		}

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/hqbobo/frame/common/log"
 )
 
 type limiterData struct {
@@ -20,7 +22,7 @@ type Limiter struct {
 }
 
 var gLimiter *Limiter
-var defaultRate = 3 //默认每秒10次
+var defaultRate = 10 //默认每秒10次
 var Unlimit = -1
 
 func init() {
@@ -30,6 +32,7 @@ func init() {
 	if err != nil {
 		rate = defaultRate
 	}
+	log.Infof("限流模块启动:%d/s", rate)
 	gLimiter.rate = rate
 }
 

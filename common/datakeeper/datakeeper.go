@@ -22,43 +22,43 @@ type DataKeeper struct {
 }
 
 // Store 保存数据
-func (this *DataKeeper) Store(key, data interface{}) {
-	this.pool.Store(key, data)
+func (dk *DataKeeper) Store(key, data interface{}) {
+	dk.pool.Store(key, data)
 	//是否开启定时更新
-	if !this.opt.upf {
-		this.ds.Update(key, data)
+	if !dk.opt.upf {
+		dk.ds.Update(key, data)
 	} else {
-		this.update.Store(key, data)
+		dk.update.Store(key, data)
 	}
 }
 
 // Delete 删除数据
-func (this *DataKeeper) Delete(key interface{}) {
-	this.pool.Delete(key)
-	this.ds.Delete(key)
+func (dk *DataKeeper) Delete(key interface{}) {
+	dk.pool.Delete(key)
+	dk.ds.Delete(key)
 }
 
 // Reload 重载数据
-func (this *DataKeeper) Reload() { this.reload() }
+func (dk *DataKeeper) Reload() { dk.reload() }
 
 // Load 获取数据
-func (this *DataKeeper) Load(key interface{}) (interface{}, bool) {
-	return this.pool.Load(key)
+func (dk *DataKeeper) Load(key interface{}) (interface{}, bool) {
+	return dk.pool.Load(key)
 }
 
 // Range calls f sequentially for each key and value present in the map.
 // If f returns false, range stops the iteration.
-func (this *DataKeeper) Range(f func(key, value interface{}) bool) {
-	this.pool.Range(f)
+func (dk *DataKeeper) Range(f func(key, value interface{}) bool) {
+	dk.pool.Range(f)
 }
 
-func (this *DataKeeper) Exit() {
-	close(this.close)
+func (dk *DataKeeper) Exit() {
+	close(dk.close)
 }
 
 func NewDataKeeper(ds DataSource, opts ...Option) *DataKeeper {
 	dr := new(DataKeeper)
-	dr.close = make(chan bool, 0)
+	dr.close = make(chan bool)
 	dr.update = new(sync.Map)
 	dr.opt = options{
 		of:  false,
@@ -82,13 +82,13 @@ func NewDataKeeper(ds DataSource, opts ...Option) *DataKeeper {
 	return dr
 }
 
-func (this *DataKeeper) reload() {
-	list := this.ds.Load()
+func (dk *DataKeeper) reload() {
+	list := dk.ds.Load()
 	pool := new(sync.Map)
 	for k, v := range list {
 		pool.Store(k, v)
 	}
-	this.pool = pool
+	dk.pool = pool
 }
 
 //根据指定时间计算下一个时间差距
@@ -109,46 +109,43 @@ func getNextTime(h, m, s int) time.Duration {
 	return target.AddDate(0, 0, 1).Sub(now)
 }
 
-func (this *DataKeeper) tf() {
-	timer := time.NewTimer(this.opt.timer)
+func (dk *DataKeeper) tf() {
+	timer := time.NewTimer(dk.opt.timer)
 	for {
 		select {
 		case <-timer.C:
-			this.reload()
-			timer.Reset(this.opt.timer)
-		case <-this.close:
-			break
+			dk.reload()
+			timer.Reset(dk.opt.timer)
+		case <-dk.close:
 		}
 	}
 }
 
-func (this *DataKeeper) of() {
+func (dk *DataKeeper) of() {
 	var timer *time.Timer
 	for {
-		dur := getNextTime(this.opt.hour, this.opt.min, this.opt.sec)
+		dur := getNextTime(dk.opt.hour, dk.opt.min, dk.opt.sec)
 		timer = time.NewTimer(dur)
 		select {
 		case <-timer.C:
-			this.reload()
-		case <-this.close:
-			break
+			dk.reload()
+		case <-dk.close:
 		}
 	}
 }
 
-func (this *DataKeeper) uf() {
-	timer := time.NewTimer(this.opt.uptimer)
+func (dk *DataKeeper) uf() {
+	timer := time.NewTimer(dk.opt.uptimer)
 	for {
 		select {
 		case <-timer.C:
-			this.update.Range(func(key, value interface{}) bool {
-				this.ds.Update(key, value)
-				this.update.Delete(key)
+			dk.update.Range(func(key, value interface{}) bool {
+				dk.ds.Update(key, value)
+				dk.update.Delete(key)
 				return true
 			})
-			timer.Reset(this.opt.uptimer)
-		case <-this.close:
-			break
+			timer.Reset(dk.opt.uptimer)
+		case <-dk.close:
 		}
 	}
 }
