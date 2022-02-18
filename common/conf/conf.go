@@ -188,15 +188,25 @@ func init() {
 	line = line + addline("持久数据", config.DbConfig.Types)
 	line = line + addline("分布式锁", config.Dlock.Type)
 	line = line + addline("锁地址", config.Dlock.Addr)
-	line = line + addline("pprof", config.Pprof)
-	log.Infof(line)
-	go func() {
+
+	switch Mode.Get() {
+	case "dev":
+		log.SetLevel(log.TraceLevel)
 		if config.Pprof == "" {
 			config.Pprof = ":9876"
 		}
-		fmt.Println("pprof start at :", config.Pprof)
-		fmt.Println(http.ListenAndServe(config.Pprof, nil))
-	}()
+		line = line + addline("pprof启动在", config.Pprof)
+		go http.ListenAndServe(config.Pprof, nil)
+		line = line + addline("日志级别", "TraceLevel")
+	case "prod":
+		log.SetLevel(log.WarnLevel)
+		line = line + addline("日志级别", "WarnLevel")
+	default:
+		log.SetLevel(log.TraceLevel)
+		line = line + addline("日志级别", "TraceLevel")
+
+	}
+	log.Infof(line)
 }
 
 const (
