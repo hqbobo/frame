@@ -206,7 +206,7 @@ func (l logger) sourced() *logrus.Entry {
 		line = 1
 	} else {
 		function := runtime.FuncForPC(pc).Name()
-		index := strings.Index(function, ".")
+		index := strings.LastIndex(function, ".")
 		slash := strings.LastIndex(file, "go/src/")
 		if len(file) > filetextlen {
 			file = file[len(file)-filetextlen:]
