@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/hqbobo/frame/common/sirupsen/logrus"
 )
 
 // Level describes the log severity level.
@@ -192,6 +192,10 @@ func (l logger) Panicf(format string, args ...interface{}) {
 	l.sourced().Panicf(format, args...)
 }
 
+const (
+	filetextlen = 30
+)
+
 // sourced adds a source field to the logger that contains
 // the file name and line where the logging happened.
 func (l logger) sourced() *logrus.Entry {
@@ -203,11 +207,15 @@ func (l logger) sourced() *logrus.Entry {
 	} else {
 		function := runtime.FuncForPC(pc).Name()
 		index := strings.Index(function, ".")
-		slash := strings.LastIndex(file, "/")
-		file = function[:index] + "/" + file[slash+1:]
+		slash := strings.LastIndex(file, "go/src/")
+		if len(file) > filetextlen {
+			file = file[len(file)-filetextlen:]
+		} else {
+			file = file[slash+7:]
+		}
 		fn = function[index+1:]
 	}
-	return l.entry.WithField("PATH", fmt.Sprintf("%s() %s:%d", fn, file, line))
+	return l.entry.WithField("PATH", fmt.Sprintf("%s() %0.30s:%d", fn, file, line))
 }
 
 var origLogger = logrus.New()
@@ -217,7 +225,7 @@ var baseLogger = logger{entry: logrus.NewEntry(origLogger)}
 func init() {
 	baseLogger.entry.Logger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05.000000",
+		TimestampFormat: "06-01-02 15:04:05.0000",
 		ForceColors:     true,
 	})
 	SetLevel(TraceLevel)

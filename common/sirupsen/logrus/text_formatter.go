@@ -274,20 +274,20 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 		}
 	}
 	fmt.Fprintf(b, "\n")
-	for _, k := range keys {
-		v := data[k]
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m", 35, v)
-	}
+
+	fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m ", levelColor, levelText)
 
 	if f.DisableTimestamp {
 		fmt.Fprintf(b, "\n\x1b[%dm%s]\x1b[0m ", yellow, caller)
 	} else if !f.FullTimestamp {
 		fmt.Fprintf(b, "\n\x1b[%dm[%04d%s]\x1b[0m ", yellow, int(entry.Time.Sub(baseTimestamp)/time.Second), caller)
 	} else {
-		fmt.Fprintf(b, "\n\x1b[%dm[%s%s]\x1b[0m ", yellow, entry.Time.Format(timestampFormat), caller)
+		fmt.Fprintf(b, "\x1b[%dm[%s%s]\x1b[0m ", yellow, entry.Time.Format(timestampFormat), caller)
 	}
-
-	fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m ", levelColor, levelText)
+	for _, k := range keys {
+		v := data[k]
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m", 35, v)
+	}
 	fmt.Fprintf(b, " %s", entry.Message)
 }
 
