@@ -70,6 +70,7 @@ func mysqlInit(config *conf.GlobalConfig) error {
 			log.Debugln("mysql write sync")
 		}
 		if v.Cache || os.Getenv("DBWCACHE") != "" {
+			log.Info("mysql 实例 启动缓存")
 			e.SetDefaultCacher(cacher)
 		}
 		w = append(w, e)
@@ -95,6 +96,7 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		e.SetMapper(names.SameMapper{})
 		e.SetMaxOpenConns(v.Size)
 		if v.Cache || os.Getenv("DBRCACHE") != "" {
+			log.Info("mysql 只读实例 启动缓存")
 			e.SetDefaultCacher(cacher)
 		}
 		r = append(r, e)
