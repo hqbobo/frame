@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/hqbobo/frame/common/conf"
 	"github.com/hqbobo/frame/common/log"
@@ -68,7 +69,8 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		if v.Sync == true {
 			log.Debugln("mysql write sync")
 		}
-		if v.Cache {
+		if v.Cache || os.Getenv("DBWCACHE") != "" {
+			log.Info("mysql 实例 启动缓存")
 			e.SetDefaultCacher(cacher)
 		}
 		w = append(w, e)
@@ -93,7 +95,8 @@ func mysqlInit(config *conf.GlobalConfig) error {
 		//设置字段映射规则
 		e.SetMapper(names.SameMapper{})
 		e.SetMaxOpenConns(v.Size)
-		if v.Cache {
+		if v.Cache || os.Getenv("DBRCACHE") != "" {
+			log.Info("mysql 只读实例 启动缓存")
 			e.SetDefaultCacher(cacher)
 		}
 		r = append(r, e)
