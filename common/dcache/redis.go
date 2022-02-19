@@ -3,10 +3,10 @@ package dcache
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"time"
 
 	"github.com/hqbobo/frame/common/log"
+	"github.com/hqbobo/frame/common/utils"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -17,18 +17,6 @@ const (
 	redis_sync_set     = 1
 	redis_sync_del     = 2
 )
-
-//生成随机字符串
-func GetRandomString(size int) string {
-	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
-	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < size; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
-	}
-	return string(result)
-}
 
 type publisher struct {
 	From string
@@ -52,7 +40,7 @@ func newRedis(ip string, pass string) *RedisSession {
 	s := new(RedisSession)
 	s.ip = ip
 	s.pass = pass
-	s.name = GetRandomString(16)
+	s.name = utils.GetRandomString(16)
 	s.client = redis.NewClient(&redis.Options{
 		Addr:     ip,
 		Password: pass, // no password set
@@ -67,7 +55,7 @@ func newRedis(ip string, pass string) *RedisSession {
 func newRedisCluster(ip []string, pass string) *RedisSession {
 	s := new(RedisSession)
 	s.pass = pass
-	s.name = GetRandomString(16)
+	s.name = utils.GetRandomString(16)
 	s.clusterCLi = redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:    ip,
 		Password: pass, // no password set
@@ -90,38 +78,20 @@ func (rs *RedisSession) subscribe() {
 	}
 	defer sub.Close()
 	var pub publisher
-	for {
-		msgi, err := sub.Receive(ctx)
-		if err != nil {
-			if err = sub.Ping(ctx, "ping"); err != nil {
-				log.Error(err.Error())
-				break
+	chn := sub.Channel()
+	for msg := range chn {
+		if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
+			if pub.From != rs.name {
+				if pub.From != rs.name {
+					if pub.Act == redis_sync_set {
+						rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
+					} else if pub.Act == redis_sync_del {
+						rs.mem.Delete(pub.Key)
+					}
+				}
 			}
 		} else {
-			switch msg := msgi.(type) {
-			case *redis.Subscription:
-				log.Debugf("subscribed to %s", msg.Channel)
-			case *redis.Message:
-				if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
-					if pub.From != rs.name {
-						//log.Debug("received %s from %s ", msg.Payload, msg.Channel)
-						//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
-						if pub.From != rs.name {
-							if pub.Act == redis_sync_set {
-								rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
-							} else if pub.Act == redis_sync_del {
-								rs.mem.Delete(pub.Key)
-							}
-						}
-					}
-				} else {
-					log.Warnln(e.Error())
-				}
-			case *redis.Pong:
-				log.Tracef("pong")
-			default:
-				log.Error("redis unreached", msgi)
-			}
+			log.Warnln(e.Error())
 		}
 	}
 }

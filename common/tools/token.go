@@ -7,8 +7,9 @@ import (
 
 	"encoding/base64"
 	"encoding/json"
+
 	"github.com/hqbobo/frame/common/aes"
-	"github.com/hqbobo/frame/common/rand"
+	"github.com/hqbobo/frame/common/utils"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -29,7 +30,7 @@ func CreateToken(uid int64) (tokenString string, err error) {
 		UID: uid,
 	}
 	claims.ExpiresAt = time.Now().Add(time.Hour * 72).Unix()
-	claims.Issuer = rand.NewLenChars(10)
+	claims.Issuer = utils.NewLenChars(10)
 	//claims := jwt.StandardClaims{
 	//	ExpiresAt: int64(time.Now().Add(time.Hour * 72).Unix()),
 	//	Issuer: issuer,

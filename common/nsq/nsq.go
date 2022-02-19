@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hqbobo/frame/common/log"
-	"github.com/hqbobo/frame/common/rand"
+	"github.com/hqbobo/frame/common/utils"
 	"github.com/nsqio/go-nsq"
 )
 
@@ -35,7 +35,7 @@ func NewNsq(address []string) *Nsq {
 	n.pos = 0
 	n.count = len(address)
 	n.address = address
-	index := rand.IntRand(0, n.count)
+	index := utils.IntRand(0, n.count)
 	addr := n.address[index]
 	if err := n.initProducer(addr); err != nil {
 		log.Fatalf("连接%v失败: %s", n.address, err.Error())

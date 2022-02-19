@@ -373,7 +373,7 @@ func Publish(topic string, msg *BrokerMessage, opts ...broker.PublishOption) err
 	return broker.Publish(topic, _brokerMsgParse(msg), opts...)
 }
 
-//BrokerHanlde 消息队列定义
+//Deprecated BrokerHanlde 消息队列定义
 type BrokerHanlde = broker.Handler
 
 //Deprecated Subscribe 消息队列接收

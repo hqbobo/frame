@@ -1,8 +1,0 @@
-time="2019-12-05 15:53:50.827708" level=warning msg="func1() /common/log/log_test.go:24 test" UserId=10
-time="2019-12-05 15:53:50.827745" level=warning msg="func1() /common/log/log_test.go:24 test" UserId=10
-time="2019-12-05 15:53:50.828456" level=info msg="func1() /common/log/log_test.go:26 test"
-time="2019-12-05 15:53:50.828561" level=info msg="func1() /common/log/log_test.go:26 test"
-time="2019-12-05 15:53:50.828548" level=warning msg="func1() /common/log/log_test.go:27 test"
-time="2019-12-05 15:53:50.828604" level=warning msg="func1() /common/log/log_test.go:27 test"
-time="2019-12-05 15:53:50.828691" level=error msg="func1() /common/log/log_test.go:28 test"
-time="2019-12-05 15:53:50.828698" level=error msg="func1() /common/log/log_test.go:28 test"

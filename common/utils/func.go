@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-	"math/rand"
 )
 
 const (
@@ -17,19 +16,6 @@ const (
 	TIGHTFORMAT     = "20060102150405"
 	LOCALTIMEZONE   = "Asia/Shanghai"
 )
-
-
-func RandomString(l int) string {
-	var result bytes.Buffer
-	var temp string
-	for i := 0; i < l; {
-		temp = string(65+rand.Intn(25))
-		result.WriteString(temp)
-		i++
-
-	}
-	return result.String()
-}
 
 //获取协程号
 func GetGID() uint64 {
@@ -181,20 +167,19 @@ func RemoveDupByMap(i []string) []string {
 	return o
 }
 
-const SQL_FORMAT="2006-01-02 15:04:05 "
+const SQL_FORMAT = "2006-01-02 15:04:05 "
 
 func DayBefore(days int) (start time.Time, end time.Time) {
 	day := time.Now().Add(-time.Hour * time.Duration(24*days))
-	start =DayBegin(day)
+	start = DayBegin(day)
 	end = DayEnd(day)
 	return start, end
 }
 
-
-func DayBegin(t time.Time) (time.Time) {
+func DayBegin(t time.Time) time.Time {
 	return t.Add(-time.Duration(t.Hour()) * time.Hour).Add(-time.Duration(t.Minute()) * time.Minute).Add(-time.Duration(t.Second()) * time.Second)
 }
 
-func DayEnd(t time.Time) (time.Time) {
-	return 	t.Add(time.Duration(24-t.Hour()) * time.Hour).Add(-time.Duration(t.Minute()) * time.Minute).Add(-time.Duration(t.Second()) * time.Second)
+func DayEnd(t time.Time) time.Time {
+	return t.Add(time.Duration(24-t.Hour()) * time.Hour).Add(-time.Duration(t.Minute()) * time.Minute).Add(-time.Duration(t.Second()) * time.Second)
 }

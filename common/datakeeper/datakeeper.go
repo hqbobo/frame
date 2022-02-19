@@ -7,9 +7,14 @@ import (
 
 // DataSource 数据源的实现
 type DataSource interface {
+	//Load 通过源数据更新
 	Load() map[interface{}]interface{}
+	//Update 更新触发
 	Update(key, val interface{})
+	//Delete 删除触发
 	Delete(key interface{})
+	//Add 添加触发
+	Add(key, val interface{})
 }
 
 // DataKeeper 数据维护管理模块
@@ -23,10 +28,14 @@ type DataKeeper struct {
 
 // Store 保存数据
 func (dk *DataKeeper) Store(key, data interface{}) {
+	//触发添加
+	if _, exist := dk.pool.Load(key); exist {
+		go dk.ds.Add(key, data)
+	}
 	dk.pool.Store(key, data)
 	//是否开启定时更新
 	if !dk.opt.upf {
-		dk.ds.Update(key, data)
+		go dk.ds.Update(key, data)
 	} else {
 		dk.update.Store(key, data)
 	}
@@ -35,7 +44,7 @@ func (dk *DataKeeper) Store(key, data interface{}) {
 // Delete 删除数据
 func (dk *DataKeeper) Delete(key interface{}) {
 	dk.pool.Delete(key)
-	dk.ds.Delete(key)
+	go dk.ds.Delete(key)
 }
 
 // Reload 重载数据
@@ -134,6 +143,7 @@ func (dk *DataKeeper) of() {
 	}
 }
 
+//处理定期修改
 func (dk *DataKeeper) uf() {
 	timer := time.NewTimer(dk.opt.uptimer)
 	for {

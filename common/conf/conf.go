@@ -146,30 +146,12 @@ func init() {
 	var filepath string
 	line := "\n"
 	Mode.Set(os.Getenv("RUNMODE"))
-	if Mode.Get() == "develop" {
-		Mode.Set("local")
-	}
-	//log.SetLogLevel(log.LevelDebug)
-	//log.SetLogModel(log.ModelDev)
 	if s := os.Getenv("config"); s == "" {
 		envStr := Mode.Get() + ".json"
 		fmt.Println("envStr >>> ", envStr)
 		_, filename, _, _ := runtime.Caller(0)
 		filepath = path.Join(path.Dir(filename), envStr)
-		//cfg := flag.String("c", "", "配置文件")
-		////配置文件
-		//help := flag.Bool("h", false, "help")
-		//flag.Parse()
-		//if *help {
-		//	flag.Usage()
-		//	os.Exit(0)
-		//}
-		//if cfg != nil && len(*cfg) > 0 {
-		//	filepath = *cfg
-		//	ParseConfig(filepath)
-		//} else {
 		ParseConfig(filepath)
-		//}
 	} else {
 		line = line + addline("配置来源", "环境变量")
 		//fmt.Println("配置信息：：：", s)
@@ -190,7 +172,7 @@ func init() {
 	line = line + addline("锁地址", config.Dlock.Addr)
 
 	switch Mode.Get() {
-	case "dev":
+	case "trace":
 		log.SetLevel(log.TraceLevel)
 		if config.Pprof == "" {
 			config.Pprof = ":9876"
@@ -198,13 +180,20 @@ func init() {
 		line = line + addline("pprof启动在", config.Pprof)
 		go http.ListenAndServe(config.Pprof, nil)
 		line = line + addline("日志级别", "TraceLevel")
+	case "dev":
+		log.SetLevel(log.InfoLevel)
+		if config.Pprof == "" {
+			config.Pprof = ":9876"
+		}
+		line = line + addline("pprof启动在", config.Pprof)
+		go http.ListenAndServe(config.Pprof, nil)
+		line = line + addline("日志级别", "InfoLevel")
 	case "prod":
 		log.SetLevel(log.WarnLevel)
 		line = line + addline("日志级别", "WarnLevel")
 	default:
 		log.SetLevel(log.TraceLevel)
 		line = line + addline("日志级别", "TraceLevel")
-
 	}
 	log.Infof(line)
 }
