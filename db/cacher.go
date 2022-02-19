@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hqbobo/frame/common/log"
 
 	"github.com/go-redis/redis/v8"
@@ -66,10 +67,11 @@ func (rcs *redisCacheStore) Get(key string) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-	result, err = rcs.store.client.Get(ctx, key).Bytes()
-	if err != nil {
-		return nil, err
+	} else {
+		result, err = rcs.store.client.Get(ctx, key).Bytes()
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = json.Unmarshal(result, obj)
 	if err != nil {
