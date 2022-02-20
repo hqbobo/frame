@@ -43,6 +43,57 @@ type WeiXinSession struct {
 	publicKey string
 }
 
+//_HttpPost 封装
+func (ws *WeiXinSession) _HttpPost(url string, data []byte) (body []byte) {
+	var rsp wxmodel.ErrRsp
+	var e error
+	r := utils.HttpPost(url, data)
+	e = json.Unmarshal(r, &rsp)
+	if e != nil {
+		log.Warn(e)
+		return r
+	}
+	//过期了
+	if rsp.Errcode == wxmodel.ErrornvalidCredential {
+		ws.reloadToken()
+	}
+	return r
+}
+
+//_HttpsGet 封装
+func (ws *WeiXinSession) _HttpsGet(url string) ([]byte, error) {
+	var rsp wxmodel.ErrRsp
+	var e error
+	r, err := utils.HttpsGet(url)
+	e = json.Unmarshal(r, &rsp)
+	if e != nil {
+		log.Warn(e)
+		return r, e
+	}
+	//过期了
+	if rsp.Errcode == wxmodel.ErrornvalidCredential {
+		ws.reloadToken()
+	}
+	return r, err
+}
+
+//_HttpGet 封装
+func (ws *WeiXinSession) _HttpGet(url string) []byte {
+	var rsp wxmodel.ErrRsp
+	var e error
+	r := utils.HttpGet(url)
+	e = json.Unmarshal(r, &rsp)
+	if e != nil {
+		log.Warn(e)
+		return r
+	}
+	//过期了
+	if rsp.Errcode == wxmodel.ErrornvalidCredential {
+		ws.reloadToken()
+	}
+	return r
+}
+
 //CFG 配置
 func (ws *WeiXinSession) CFG() wxmodel.WeixinCfg { return ws.cfg }
 
@@ -62,7 +113,7 @@ func (ws *WeiXinSession) reloadToken() error {
 	if ws.Token == "" || ws.TimeOut <= time.Now().Unix() {
 		//在线更新token
 		var rsp wxmodel.TokenRsp
-		r, e := utils.HttpsGet(fmt.Sprintf(TokenURL, ws.cfg.Appid, ws.cfg.Appsecret))
+		r, e := ws._HttpsGet(fmt.Sprintf(TokenURL, ws.cfg.Appid, ws.cfg.Appsecret))
 		if e != nil {
 			log.Warn(e)
 			return e
@@ -122,7 +173,7 @@ func (ws *WeiXinSession) reloadTicket() error {
 	if ws.Ticket == "" || ws.TicketTimeOut <= time.Now().Unix() {
 		//在线更新token
 		var rsp wxmodel.TicketRsp
-		r, e := utils.HttpsGet(fmt.Sprintf(GetTicketStr, ws.Token))
+		r, e := ws._HttpsGet(fmt.Sprintf(GetTicketStr, ws.Token))
 		log.Debug(fmt.Sprintf(GetTicketStr, ws.Token), ": ", string(r))
 		if e != nil {
 			log.Warn(e)
@@ -164,7 +215,7 @@ func (ws *WeiXinSession) getTicket() (string, error) {
 func (ws *WeiXinSession) getWeixinSvrIP() error {
 	//更新token
 	var rsp wxmodel.ServerListRsp
-	r, e := utils.HttpsGet(fmt.Sprintf(GetServerURL, ws.Token))
+	r, e := ws._HttpsGet(fmt.Sprintf(GetServerURL, ws.Token))
 	if e != nil {
 		log.Warn(e)
 		return e
@@ -193,6 +244,9 @@ func (ws *WeiXinSession) Run(cb handle.WeixinMsgHandleInterface, eventcb handle.
 		log.Warn(e)
 	}
 	ws.publicKey, e = pay.GetPublickKey(ws.cfg.MchId, ws.cfg.KeyFile, ws.cfg.CertFile, ws.cfg.WXRoot, ws.cfg.APIKey)
+	if e != nil {
+		log.Info(e)
+	}
 	svrInit(ws, cb, eventcb)
 }
 
@@ -216,7 +270,7 @@ func NewSession(cfg wxmodel.WeixinCfg) *WeiXinSession {
 //GetUserToken 根据code获取用户token
 func (ws *WeiXinSession) GetUserToken(code string) (*wxmodel.UserToken, error) {
 	url := fmt.Sprintf(weixin_user_token, ws.cfg.Appid, ws.cfg.Appsecret, code)
-	body := utils.HttpGet(url)
+	body := ws._HttpGet(url)
 	log.Info(string(body))
 	usr := new(wxmodel.UserToken)
 	if err := json.Unmarshal(body, usr); err != nil {
@@ -237,7 +291,7 @@ func (ws *WeiXinSession) GetUInfo(openid, token string) (*wxmodel.UInfo, error) 
 	}
 
 	url := fmt.Sprintf(weixin_user_info, token, openid)
-	body := utils.HttpGet(url)
+	body := ws._HttpGet(url)
 	log.Info(string(body))
 	usr := new(wxmodel.UInfo)
 	if err := json.Unmarshal(body, usr); err != nil {
@@ -264,7 +318,7 @@ func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interfa
 	url := weixin_template_url + "?access_token=" + ws.Token
 
 	log.Trace(string(buf))
-	body := utils.HttpPost(url, []byte(buf))
+	body := ws._HttpPost(url, []byte(buf))
 	wxError := new(wxmodel.ErrRsp)
 	if err := json.Unmarshal(body, wxError); err != nil {
 		return err
@@ -272,7 +326,7 @@ func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interfa
 
 	log.Trace(wxError)
 	if wxError.Errcode != 0 {
-		body := utils.HttpPost(url, []byte(buf))
+		body := ws._HttpPost(url, []byte(buf))
 		if err := json.Unmarshal(body, wxError); err != nil {
 			return err
 		}
@@ -301,7 +355,7 @@ func (ws *WeiXinSession) SendTemplateMsgJumpMini(openid, templateid string, data
 	url := weixin_template_url + "?access_token=" + ws.Token
 
 	log.Trace(string(buf))
-	body := utils.HttpPost(url, []byte(buf))
+	body := ws._HttpPost(url, []byte(buf))
 	wxError := new(wxmodel.ErrRsp)
 	if err := json.Unmarshal(body, wxError); err != nil {
 		return err
@@ -309,7 +363,7 @@ func (ws *WeiXinSession) SendTemplateMsgJumpMini(openid, templateid string, data
 
 	log.Trace(wxError)
 	if wxError.Errcode != 0 {
-		body := utils.HttpPost(url, []byte(buf))
+		body := ws._HttpPost(url, []byte(buf))
 		if err := json.Unmarshal(body, wxError); err != nil {
 			return err
 		}
@@ -335,7 +389,7 @@ func (ws *WeiXinSession) SendKfText(openid, msg string) error {
 	url := weixin_kf_url + "?access_token=" + ws.Token
 
 	log.Debug(string(buf))
-	body := utils.HttpPost(url, []byte(buf))
+	body := ws._HttpPost(url, []byte(buf))
 	wxError := new(wxmodel.ErrRsp)
 	if err := json.Unmarshal(body, wxError); err != nil {
 		return err
@@ -343,7 +397,7 @@ func (ws *WeiXinSession) SendKfText(openid, msg string) error {
 
 	log.Debug(wxError)
 	if wxError.Errcode != 0 {
-		body := utils.HttpPost(url, []byte(buf))
+		body := ws._HttpPost(url, []byte(buf))
 		if err := json.Unmarshal(body, wxError); err != nil {
 			return err
 		}
@@ -390,7 +444,7 @@ func (ws *WeiXinSession) GetUserInfo(openid string) *wxmodel.UserInfoRsp {
 	}
 	url := fmt.Sprintf(weixin_userinfo_url, ws.Token, openid)
 
-	body := utils.HttpGet(url)
+	body := ws._HttpGet(url)
 	log.Debug(string(body))
 	rsp := new(wxmodel.UserInfoRsp)
 	if err := json.Unmarshal(body, rsp); err != nil {
@@ -458,7 +512,7 @@ func (ws *WeiXinSession) Qrpay(authcode, orderid, body, detail, attach string, f
 		return nil, err
 	}
 	log.Trace("--app_pay_qrcode--", string(buf))
-	r := utils.HttpPost(app_pay_qrcode, []byte(buf))
+	r := ws._HttpPost(app_pay_qrcode, []byte(buf))
 	log.Trace("--Rsp--", string(r))
 	rsp := new(wxmodel.QrPayRsp)
 	if err := xml.Unmarshal(r, rsp); err != nil {
@@ -501,7 +555,7 @@ func (ws *WeiXinSession) Orderquery(transactionid, outtradeno string) (*wxmodel.
 		log.Error(err)
 		return nil, err
 	}
-	r := utils.HttpPost(app_pay_orderquery, []byte(buf))
+	r := ws._HttpPost(app_pay_orderquery, []byte(buf))
 	log.Trace("--Rsp--", string(r))
 	rsp := new(wxmodel.OrderqueryRsp)
 	if err := xml.Unmarshal(r, rsp); err != nil {
@@ -533,7 +587,7 @@ func (ws *WeiXinSession) Authcodetoopenid(AuthCode string) (*wxmodel.Authcodetoo
 		log.Error(err)
 		return nil, err
 	}
-	r := utils.HttpPost(app_pay_authcodetoopenid, []byte(buf))
+	r := ws._HttpPost(app_pay_authcodetoopenid, []byte(buf))
 	log.Trace("--Rsp--", string(r))
 	rsp := new(wxmodel.AuthcodetoopenidRsp)
 	if err := xml.Unmarshal(r, rsp); err != nil {
@@ -617,7 +671,7 @@ func (ws *WeiXinSession) GetMaterial() error {
 	r.Count = 20
 	data, _ := json.Marshal(&r)
 	url := fmt.Sprintf(GetMaterialServerURL, ws.Token)
-	body := utils.HttpPost(url, data)
+	body := ws._HttpPost(url, data)
 	log.Debug(string(body))
 	return nil
 }
