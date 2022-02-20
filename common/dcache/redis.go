@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/hqbobo/frame/common/log"
@@ -83,54 +84,83 @@ var ctx = context.Background()
 //监听数据修改事件
 func (rs *RedisSession) subscribe() {
 	var sub *redis.PubSub
-	if rs.cluster {
-		sub = rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
+	if os.Getenv("DCACHESUB") != "" {
+		log.Info("使用dcache被动同步")
+		if rs.cluster {
+			sub = rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
+		} else {
+			sub = rs.client.Subscribe(ctx, redis_sync_chan)
+		}
 	} else {
-		sub = rs.client.Subscribe(ctx, redis_sync_chan)
+		log.Info("不使用dcache被动同步")
+		return
 	}
 	defer sub.Close()
 	var pub publisher
-	for {
-		msgi, err := sub.Receive(ctx)
-		if err != nil {
-			if err = sub.Ping(ctx, "ping"); err != nil {
-				log.Error(err.Error())
-				break
-			}
-		} else {
-			switch msg := msgi.(type) {
-			case *redis.Subscription:
-				log.Debugf("subscribed to %s", msg.Channel)
-			case *redis.Message:
-				if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
-					if pub.From != rs.name {
-						//log.Debug("received %s from %s ", msg.Payload, msg.Channel)
-						//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
-						if pub.From != rs.name {
-							if pub.Act == redis_sync_set {
-								rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
-							} else if pub.Act == redis_sync_del {
-								rs.mem.Delete(pub.Key)
-							}
+
+	chn := sub.Channel()
+	for msg := range chn {
+		if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
+			if pub.From != rs.name {
+				// log.Debugf("received  from %s ", msg.Channel)
+				//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
+				if pub.From != rs.name {
+					if pub.Act == redis_sync_set {
+						var data string
+						var ok bool
+						if data, ok = rs._Get(pub.Key); !ok {
+							log.Warnf("同步%s数据出错", pub.Key)
 						}
+						rs.mem.Set(pub.Key, data, pub.Ttl)
+					} else if pub.Act == redis_sync_del {
+						rs.mem.Delete(pub.Key)
 					}
-				} else {
-					log.Warnln(e.Error())
 				}
-			case *redis.Pong:
-				log.Tracef("pong")
-			default:
-				log.Error("redis unreached", msgi)
 			}
 		}
 	}
+	// for {
+	// 	msgi, err := sub.Receive(ctx)
+	// 	if err != nil {
+	// 		if err = sub.Ping(ctx, "ping"); err != nil {
+	// 			log.Error(err.Error())
+	// 			break
+	// 		}
+	// 	} else {
+	// 		switch msg := msgi.(type) {
+	// 		case *redis.Subscription:
+	// 			log.Debugf("subscribed to %s", msg.Channel)
+	// 		case *redis.Message:
+	// 			if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
+	// 				if pub.From != rs.name {
+	// 					//log.Debug("received %s from %s ", msg.Payload, msg.Channel)
+	// 					//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
+	// 					if pub.From != rs.name {
+	// 						if pub.Act == redis_sync_set {
+	// 							rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
+	// 						} else if pub.Act == redis_sync_del {
+	// 							rs.mem.Delete(pub.Key)
+	// 						}
+	// 					}
+	// 				}
+	// 			} else {
+	// 				log.Warnln(e.Error())
+	// 			}
+	// 		case *redis.Pong:
+	// 			log.Tracef("pong")
+	// 		default:
+	// 			log.Error("redis unreached", msgi)
+	// 		}
+	// 	}
+	// }
 }
 
 //消息推送
 func (rs *RedisSession) publish(key, val string, ttl int, act int) {
 	p := new(publisher)
 	p.Key = key
-	p.Val = val
+	//不发送内容
+	p.Val = ""
 	p.Ttl = ttl
 	p.Act = act
 	p.From = rs.name
@@ -184,6 +214,22 @@ func (rs *RedisSession) HDel(key, field string) error {
 	return rs.client.HDel(ctx, key).Err()
 }
 
+func (rs *RedisSession) _Get(key string) (string, bool) {
+	var s string
+	var str *redis.StringCmd
+	if rs.cluster {
+		str = rs.clusterCLi.Get(ctx, key)
+	} else {
+		str = rs.client.Get(ctx, key)
+	}
+	if str.Err() != nil {
+		log.Warnf("获取key %s 失败, %s", key, str.Err().Error())
+		return "", false
+	}
+	s = str.Val()
+
+	return s, true
+}
 func (rs *RedisSession) Get(key string, data interface{}) bool {
 	var s string
 	if !rs.mem.Get(key, &s) {
@@ -211,7 +257,7 @@ func (rs *RedisSession) Get(key string, data interface{}) bool {
 		return false
 	}
 	if e := json.Unmarshal([]byte(s), data); e != nil {
-		log.Warnln("%s - %s ", s, e.Error())
+		log.Warnln("%s - %s ", key, e.Error())
 		return false
 	}
 	return true
