@@ -338,6 +338,42 @@ func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interfa
 	return nil
 }
 
+//SendTemplateMsg 发送模板消息
+func (ws *WeiXinSession) SendTemplateMsgJumpUrl(openid, templateid string, data interface{}, jurl string) error {
+	if _, err := ws.getToken(); err != nil {
+		log.Error(err)
+		return err
+	}
+	wtc := wxmodel.WeixinTemp{}
+	wtc.TemplateId = templateid
+	wtc.ToUser = openid
+	wtc.Topcolor = topColor
+	wtc.Data = data
+	wtc.Url = jurl
+	buf, _ := json.Marshal(wtc)
+	url := weixin_template_url + "?access_token=" + ws.Token
+
+	log.Trace(string(buf))
+	body := ws._HttpPost(url, []byte(buf))
+	wxError := new(wxmodel.ErrRsp)
+	if err := json.Unmarshal(body, wxError); err != nil {
+		return err
+	}
+
+	log.Trace(wxError)
+	if wxError.Errcode != 0 {
+		body := ws._HttpPost(url, []byte(buf))
+		if err := json.Unmarshal(body, wxError); err != nil {
+			return err
+		}
+		if wxError.Errcode != 0 {
+			fmt.Println(wxError)
+			return errors.New(wxError.Errmsg)
+		}
+	}
+	return nil
+}
+
 //SendTemplateMsgJumpMini 发送模板消息
 func (ws *WeiXinSession) SendTemplateMsgJumpMini(openid, templateid string, data interface{}, appid, jump string) error {
 	if _, err := ws.getToken(); err != nil {
