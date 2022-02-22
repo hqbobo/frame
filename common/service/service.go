@@ -298,10 +298,10 @@ func (dc *dcWrapper) Call(ctx context.Context, req client.Request, rsp interface
 	balancekey := md["Balancekey"]
 	key, _ := strconv.Atoi(balancekey)
 	filter := func(services []*registry.Service) []*registry.Service {
-		total := len(services)
-		for i, service := range services {
+		for _, service := range services {
+			total := len(service.Nodes)
 			var nodes []*registry.Node
-			for _, node := range service.Nodes {
+			for i, node := range service.Nodes {
 				if i == key%total {
 					nodes = append(nodes, node)
 				}
