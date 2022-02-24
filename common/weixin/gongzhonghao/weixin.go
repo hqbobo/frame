@@ -55,7 +55,7 @@ func (ws *WeiXinSession) _HttpPost(url string, data []byte) (body []byte) {
 	}
 	//过期了
 	if rsp.Errcode == wxmodel.ErrornvalidCredential {
-		ws.reloadToken()
+		ws.TokenReset()
 	}
 	return r
 }
@@ -72,7 +72,7 @@ func (ws *WeiXinSession) _HttpsGet(url string) ([]byte, error) {
 	}
 	//过期了
 	if rsp.Errcode == wxmodel.ErrornvalidCredential {
-		ws.reloadToken()
+		ws.TokenReset()
 	}
 	return r, err
 }
@@ -89,7 +89,7 @@ func (ws *WeiXinSession) _HttpGet(url string) []byte {
 	}
 	//过期了
 	if rsp.Errcode == wxmodel.ErrornvalidCredential {
-		ws.reloadToken()
+		ws.TokenReset()
 	}
 	return r
 }
@@ -125,7 +125,7 @@ func (ws *WeiXinSession) reloadToken() error {
 		}
 		log.Debug("在线获取新的token :", rsp.Access_token)
 		ws.Token = rsp.Access_token
-		ws.TimeOut = int64(rsp.Expires_in) + time.Now().Unix()
+		ws.TimeOut = int64(rsp.Expires_in-10) + time.Now().Unix()
 		if rsp.Errcode != 0 {
 			return errors.New(rsp.ErrRsp.Errmsg)
 		}
@@ -464,7 +464,7 @@ ag:
 	s.Timestamp = time.Now().Unix()
 	str := fmt.Sprintf("jsapi_ticket=%s&noncestr=%s&timestamp=%d&url=%s",
 		ws.Ticket, s.NonceStr, s.Timestamp, url)
-	log.Debug("jsapi: ", str)
+	// log.Debug("jsapi: ", str)
 	h := sha1.New()
 	h.Write([]byte(str))
 	s.Signature = hex.EncodeToString(h.Sum(nil))
