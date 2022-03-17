@@ -240,7 +240,7 @@ func (rs *RedisSession) Get(key string, data interface{}) bool {
 			str = rs.client.Get(ctx, key)
 		}
 		if str.Err() != nil {
-			log.Warnf("获取key %s 失败, %s", key, str.Err().Error())
+			log.Debug("获取key %s 失败, %s", key, str.Err().Error())
 			return false
 		}
 		s = str.Val()
@@ -257,7 +257,7 @@ func (rs *RedisSession) Get(key string, data interface{}) bool {
 		return false
 	}
 	if e := json.Unmarshal([]byte(s), data); e != nil {
-		log.Warnln("%s - %s ", key, e.Error())
+		log.Warn("%s - %s ", key, e.Error())
 		return false
 	}
 	return true
@@ -326,7 +326,7 @@ func (rs *RedisSession) ScanDelete(key string) (int, error) {
 			keys, cursor, err = rs.client.Scan(ctx, cursor, key, 100).Result()
 		}
 		if err != nil {
-			log.Error("scan", key, "错误:", err.Error())
+			log.Warn("scan", key, "错误:", err.Error())
 			return 0, err
 		}
 		n += len(keys)
@@ -337,7 +337,7 @@ func (rs *RedisSession) ScanDelete(key string) (int, error) {
 				_, err = rs.client.Del(ctx, v).Result()
 			}
 			if err != nil {
-				log.Error("删除", key, "错误:", err.Error())
+				log.Warn("删除", key, "错误:", err.Error())
 				return n, err
 			}
 		}

@@ -302,11 +302,16 @@ func (dc *dcWrapper) Call(ctx context.Context, req client.Request, rsp interface
 			total := len(service.Nodes)
 			var nodes []*registry.Node
 			for i, node := range service.Nodes {
+				if key == 0 {
+					nodes = append(nodes, node)
+					continue
+				}
 				if i == key%total {
 					nodes = append(nodes, node)
 				}
 			}
 			service.Nodes = nodes
+			// log.Debugf("callService:%s name:%s Key:%d nodes:%+v", req.Service, service.Name, key, service.Nodes)
 		}
 		return services
 	}
