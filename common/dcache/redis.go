@@ -200,6 +200,13 @@ func (rs *RedisSession) HGet(key, field string) (string, error) {
 	}
 	return rs.client.HGet(ctx, key, field).Result()
 }
+func (rs *RedisSession) HGetAll(key string) map[string]string {
+	if rs.cluster {
+		return rs.clusterCLi.HGetAll(ctx, key).Val()
+	}
+	return rs.client.HGetAll(ctx, key).Val()
+}
+
 func (rs *RedisSession) HSet(key, field, data string) error {
 	if rs.cluster {
 		return rs.clusterCLi.HSet(ctx, key, field, data).Err()
