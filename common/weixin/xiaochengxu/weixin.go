@@ -168,6 +168,8 @@ func (sess *WeiXinMiniSession) WxLogin(encryptedData, iv, code string) (*minimod
 	log.Debugf("%s", str.(string))
 	user := new(minimodel.UserWX)
 	json.Unmarshal([]byte(str.(string)), user)
+	user.OpenId = session.OpenId
+	user.Unionid = session.UnionId
 	log.Debug(user)
 	return user, nil
 }
