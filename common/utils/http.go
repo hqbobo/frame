@@ -6,13 +6,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/hqbobo/frame/common/log"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/hqbobo/frame/common/log"
 )
 
 type httpResponse struct {

@@ -3,6 +3,7 @@ package dcache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -42,16 +43,18 @@ type publisher struct {
 type RedisSession struct {
 	client     *redis.Client
 	clusterCLi *redis.ClusterClient
-	ip         string
 	pass       string
 	name       string
 	mem        *MemSession
 	cluster    bool
+	ips        []string //服务器ip
+	topics     []string //同步队列topic
+	pid        int64    //队列topic id 用来轮训发送
 }
 
 func newRedis(ip string, pass string) *RedisSession {
 	s := new(RedisSession)
-	s.ip = ip
+	s.ips = []string{ip}
 	s.pass = pass
 	s.name = GetRandomString(16)
 	s.client = redis.NewClient(&redis.Options{
@@ -60,6 +63,7 @@ func newRedis(ip string, pass string) *RedisSession {
 		DB:       0,
 	})
 	s.cluster = false
+	s.topics = []string{redis_sync_chan + fmt.Sprint(0)}
 	s.mem = newMemSession()
 	go s.subscribe()
 	return s
@@ -73,8 +77,13 @@ func newRedisCluster(ip []string, pass string) *RedisSession {
 		Addrs:    ip,
 		Password: pass, // no password set
 	})
+	s.ips = ip
 	s.cluster = true
 	s.mem = newMemSession()
+	//做流量负载
+	for i := 0; i < len(ip)*2; i++ {
+		s.topics = append(s.topics, redis_sync_chan+fmt.Sprint(i))
+	}
 	go s.subscribe()
 	return s
 }
@@ -83,76 +92,51 @@ var ctx = context.Background()
 
 //监听数据修改事件
 func (rs *RedisSession) subscribe() {
-	var sub *redis.PubSub
-	if os.Getenv("DCACHESUB") != "" {
-		log.Info("使用dcache被动同步")
-		if rs.cluster {
-			sub = rs.clusterCLi.Subscribe(ctx, redis_sync_chan)
-		} else {
-			sub = rs.client.Subscribe(ctx, redis_sync_chan)
-		}
-	} else {
-		log.Info("不使用dcache被动同步")
-		return
-	}
-	defer sub.Close()
-	var pub publisher
-
-	chn := sub.Channel()
-	for msg := range chn {
-		if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
-			if pub.From != rs.name {
-				// log.Debugf("received  from %s ", msg.Channel)
-				//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
-				if pub.From != rs.name {
-					if pub.Act == redis_sync_set {
-						var data string
-						var ok bool
-						if data, ok = rs._Get(pub.Key); !ok {
-							log.Warnf("同步%s数据出错", pub.Key)
+	for _, topic := range rs.topics {
+		go func(t string) {
+			var sub *redis.PubSub
+			if os.Getenv("DCACHESUB") != "" {
+				log.Info("使用dcache被动同步")
+				if rs.cluster {
+					sub = rs.clusterCLi.Subscribe(ctx, t)
+				} else {
+					sub = rs.client.Subscribe(ctx, t)
+				}
+			} else {
+				log.Info("不使用dcache被动同步")
+				return
+			}
+			defer sub.Close()
+			log.Info("注册同步队列:", t)
+			var pub publisher
+			chn := sub.Channel()
+			for msg := range chn {
+				if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
+					if pub.From != rs.name {
+						if pub.From != rs.name {
+							if pub.Act == redis_sync_set {
+								var data string
+								var ok bool
+								if data, ok = rs._Get(pub.Key); !ok {
+									log.Warnf("同步%s数据出错", pub.Key)
+								}
+								rs.mem.Set(pub.Key, data, pub.Ttl)
+							} else if pub.Act == redis_sync_del {
+								rs.mem.Delete(pub.Key)
+							}
 						}
-						rs.mem.Set(pub.Key, data, pub.Ttl)
-					} else if pub.Act == redis_sync_del {
-						rs.mem.Delete(pub.Key)
 					}
 				}
 			}
-		}
+		}(topic)
 	}
-	// for {
-	// 	msgi, err := sub.Receive(ctx)
-	// 	if err != nil {
-	// 		if err = sub.Ping(ctx, "ping"); err != nil {
-	// 			log.Error(err.Error())
-	// 			break
-	// 		}
-	// 	} else {
-	// 		switch msg := msgi.(type) {
-	// 		case *redis.Subscription:
-	// 			log.Debugf("subscribed to %s", msg.Channel)
-	// 		case *redis.Message:
-	// 			if e := json.Unmarshal([]byte(msg.Payload), &pub); e == nil {
-	// 				if pub.From != rs.name {
-	// 					//log.Debug("received %s from %s ", msg.Payload, msg.Channel)
-	// 					//log.Debug("[ %s ]:message:", pub.From, msg.Payload)
-	// 					if pub.From != rs.name {
-	// 						if pub.Act == redis_sync_set {
-	// 							rs.mem.Set(pub.Key, pub.Val, pub.Ttl)
-	// 						} else if pub.Act == redis_sync_del {
-	// 							rs.mem.Delete(pub.Key)
-	// 						}
-	// 					}
-	// 				}
-	// 			} else {
-	// 				log.Warnln(e.Error())
-	// 			}
-	// 		case *redis.Pong:
-	// 			log.Tracef("pong")
-	// 		default:
-	// 			log.Error("redis unreached", msgi)
-	// 		}
-	// 	}
-	// }
+}
+
+//消息推送
+func (rs *RedisSession) picktopic() string {
+	rs.pid++
+	rs.pid = rs.pid % int64(len(rs.ips)-1)
+	return rs.topics[rs.pid]
 }
 
 //消息推送
@@ -172,12 +156,12 @@ func (rs *RedisSession) publish(key, val string, ttl int, act int) {
 		return
 	}
 	if rs.cluster {
-		rsp := rs.clusterCLi.Publish(ctx, redis_sync_chan, string(s))
+		rsp := rs.clusterCLi.Publish(ctx, rs.picktopic(), string(s))
 		if rsp.Err() != nil {
 			log.Warnln(rsp.Err().Error())
 		}
 	} else {
-		rsp := rs.client.Publish(ctx, redis_sync_chan, string(s))
+		rsp := rs.client.Publish(ctx, rs.picktopic(), string(s))
 		if rsp.Err() != nil {
 			log.Warnln(rsp.Err().Error())
 		}

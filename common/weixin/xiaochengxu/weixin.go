@@ -15,6 +15,7 @@ import (
 	"github.com/hqbobo/frame/common/utils"
 	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 	"github.com/hqbobo/frame/common/weixin/pay"
+	"github.com/hqbobo/frame/common/weixin/xiaochengxu/model"
 	minimodel "github.com/hqbobo/frame/common/weixin/xiaochengxu/model"
 )
 
@@ -153,6 +154,24 @@ func (sess *WeiXinMiniSession) weixinMiniProgramLogin(code string) (*WxMiniBody,
 	return o, nil
 }
 
+func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.UserPhoneByCode, error) {
+	var err error
+	body := utils.HttpPost("https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token="+sess.Token,
+		[]byte("{\"code\": \""+code+"\"}"))
+
+	// defer resp.Body.Close()
+	// body, err := ioutil.ReadAll(resp.Body)
+	log.Debug("wx resp", string(body))
+	o := new(model.UserPhoneByCode)
+	err = json.Unmarshal(body, o)
+	if err != nil {
+		return nil, err
+	}
+	if o.Errcode != 0 {
+		return nil, errors.New(o.Errmsg)
+	}
+	return o, nil
+}
 func (sess *WeiXinMiniSession) WxLogin(encryptedData, iv, code string) (*minimodel.UserWX, error) {
 	session, err := sess.weixinMiniProgramLogin(code)
 	if err != nil {
@@ -174,24 +193,31 @@ func (sess *WeiXinMiniSession) WxLogin(encryptedData, iv, code string) (*minimod
 	return user, nil
 }
 
-func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code string) (*minimodel.UserPhone, error) {
+func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code, phonecode string) (*minimodel.UserPhone, error) {
 	session, err := sess.weixinMiniProgramLogin(code)
 	if err != nil {
 		return nil, err
 	}
 	log.Debug("iv:", iv, " code:", code, " session_key:", session.Session_key)
-	pc := utils.WxBizDataCrypt{AppID: sess.cfg.Appid, SessionKey: session.Session_key}
-	str, err := pc.Decrypt(encryptedData, iv, true) //第三个参数解释： 需要返回 JSON 数据类型时 使用 true, 需要返回 map 数据类型时 使用 false
+	puser, err := sess.weixinMiniProgramGetPhone(phonecode)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
+	// pc := utils.WxBizDataCrypt{AppID: sess.cfg.Appid, SessionKey: session.Session_key}
+	// str, err := pc.Decrypt(encryptedData, iv, true) //第三个参数解释： 需要返回 JSON 数据类型时 使用 true, 需要返回 map 数据类型时 使用 false
+	// if err != nil {
+	// 	log.Error(err)
+	// 	return nil, err
+	// }
 	user := new(minimodel.UserPhone)
-	if err = json.Unmarshal([]byte(str.(string)), user); err != nil {
-		log.Warn(err)
-		return nil, err
-	}
-	log.Debug(str.(string))
+	// if err = json.Unmarshal([]byte(str.(string)), user); err != nil {
+	// 	log.Warn(err)
+	// 	return nil, err
+	// }
+	// log.Debug(str.(string))
+	user.PhoneNumber = puser.Phone.PhoneNumber
+	user.PurePhoneNumber = puser.Phone.PurePhoneNumber
+	user.Watermark = puser.Phone.Watermark
 	user.OpenId = session.OpenId
 	user.Unionid = session.UnionId
 	log.Debug(user)

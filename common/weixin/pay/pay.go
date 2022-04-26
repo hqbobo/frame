@@ -9,12 +9,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/hqbobo/frame/common/log"
-	"github.com/hqbobo/frame/common/utils"
-	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hqbobo/frame/common/log"
+	"github.com/hqbobo/frame/common/utils"
+	wxmodel "github.com/hqbobo/frame/common/weixin/model"
 )
 
 func fillEmpty(s string) string {

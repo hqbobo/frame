@@ -26,3 +26,8 @@ type UserPhone struct {
 	Unionid         string    `json:"unionId"`
 	OpenId          string    `json:"openId"`
 }
+
+type UserPhoneByCode struct {
+	ErrRsp
+	Phone UserPhone `json:"phone_info"`
+}
