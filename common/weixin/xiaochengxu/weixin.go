@@ -158,7 +158,10 @@ func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.Us
 	var err error
 	body := utils.HttpPost("https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token="+sess.Token,
 		[]byte("{\"code\": \""+code+"\"}"))
-
+	if _, err = sess.getToken(); err != nil {
+		log.Error(err)
+		return nil, err
+	}
 	// defer resp.Body.Close()
 	// body, err := ioutil.ReadAll(resp.Body)
 	log.Debug("wx resp", string(body))
