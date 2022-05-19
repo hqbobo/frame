@@ -134,6 +134,9 @@ func (rs *RedisSession) subscribe() {
 
 //消息推送
 func (rs *RedisSession) picktopic() string {
+	if len(rs.ips) == 1 {
+		return rs.topics[0]
+	}
 	rs.pid++
 	rs.pid = rs.pid % int64(len(rs.ips)-1)
 	return rs.topics[rs.pid]
