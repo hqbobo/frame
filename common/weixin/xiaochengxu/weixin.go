@@ -133,6 +133,11 @@ type WxMiniBody struct {
 }
 
 func (sess *WeiXinMiniSession) weixinMiniProgramLogin(code string) (*WxMiniBody, error) {
+	var err error
+	if _, err = sess.getToken(); err != nil {
+		log.Error(err)
+		return nil, err
+	}
 	body, err := utils.HttpsGet("https://api.weixin.qq.com/sns/jscode2session?appid=" + sess.cfg.Appid + "&secret=" + sess.cfg.Appsecret + "&js_code=" + code + "&grant_type=authorization_code")
 	if err != nil {
 		log.Debug(err, "--------->获取openid和sessionKey失败")
