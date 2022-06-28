@@ -258,12 +258,12 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 	opts = append(opts, micro.RegisterTTL(time.Second*6))
 	opts = append(opts, micro.RegisterInterval(time.Second*2))
 	opts = append(opts, micro.Server(sgrpc.NewServer(server.Name(name),
-		sgrpc.MaxMsgSize(1024*1024*40))))
+		sgrpc.MaxMsgSize(1024*1024*100))))
 	opts = append(opts, micro.Client(cgrpc.NewClient(
 		client.RequestTimeout(time.Second*60),
 		client.PoolSize(200),
-		cgrpc.MaxSendMsgSize(1024*1024*40),
-		cgrpc.MaxRecvMsgSize(1024*1024*40))))
+		cgrpc.MaxSendMsgSize(1024*1024*100),
+		cgrpc.MaxRecvMsgSize(1024*1024*100))))
 	opts = append(opts, micro.WrapClient(newWrapper))
 	if config.Tracelink != "" {
 		//log.Debugf("启动链路追踪:%s", config.Tracelink)
