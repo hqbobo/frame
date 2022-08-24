@@ -101,6 +101,7 @@ func HttpPost(url string, data []byte) (body []byte) {
 	resp, err := client.Post(url, "application/json;charset=utf-8", bytes.NewBuffer(data))
 	if err != nil {
 		log.Warn(err)
+		return
 	}
 	defer resp.Body.Close()
 	body, err = ioutil.ReadAll(resp.Body)
@@ -228,7 +229,10 @@ func UploadFile(uri string, params map[string]string, paramName, path string) er
 		return err
 	}
 	_, err = io.Copy(part, file)
-
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
 	}
@@ -237,10 +241,15 @@ func UploadFile(uri string, params map[string]string, paramName, path string) er
 		return err
 	}
 	request, err := http.NewRequest("POST", uri, body)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
 	res, err := client.Do(request)
 	if err != nil {
+		log.Warn(err)
 		return err
 	}
 

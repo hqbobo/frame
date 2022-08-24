@@ -5,6 +5,7 @@ const (
 	GetServerURL             = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=%s"
 	GetTicketStr             = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=%s&type=jsapi"
 	weixin_template_url      = "https://api.weixin.qq.com/cgi-bin/message/template/send"
+	weixin_once_template_url = "https://api.weixin.qq.com/cgi-bin/message/template/subscribe"
 	weixin_kf_url            = "https://api.weixin.qq.com/cgi-bin/message/custom/send"
 	weixin_user_token        = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code"
 	weixin_user_info         = "https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN"

@@ -271,6 +271,7 @@ func NewService(name string, config *conf.GlobalConfig) *Service {
 		opts = append(opts, micro.WrapHandler(wrapperTrace.NewHandlerWrapper(goTracing.GlobalTracer())))
 		opts = append(opts, micro.WrapClient(wrapperTrace.NewClientWrapper(goTracing.GlobalTracer())))
 	}
+	// opts = append(opts, micro.WrapHandler(PanicHandlerWrapper()))
 	//opts = append(opts, micro.Transport(tcpTrans.NewTransport()))
 	svc.service = micro.NewService(opts...)
 	svc.service.Init()

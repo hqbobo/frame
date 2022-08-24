@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hqbobo/frame/common/log"
+	"github.com/micro/go-micro/v2/server"
 
 	goTracing "github.com/opentracing/opentracing-go"
 	zipkinot "github.com/openzipkin-contrib/zipkin-go-opentracing"
@@ -47,4 +49,15 @@ func TraceSpan(ctx context.Context, name string) (Span, context.Context) {
 		return goTracing.StartSpanFromContext(ctx, name)
 	}
 	return nullTracerSpan{}, ctx
+}
+
+// PanicHandlerWrapper accepts an opentracing Tracer and returns a Handler Wrapper
+func PanicHandlerWrapper() server.HandlerWrapper {
+	return func(h server.HandlerFunc) server.HandlerFunc {
+		return func(ctx context.Context, req server.Request, rsp interface{}) error {
+			name := fmt.Sprintf("%s.%s", req.Service(), req.Endpoint())
+			log.Info(name)
+			return h(ctx, req, rsp)
+		}
+	}
 }
