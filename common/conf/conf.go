@@ -149,32 +149,28 @@ func init() {
 	if Mode.Get() == "develop" {
 		Mode.Set("local")
 	}
-	//log.SetLogLevel(log.LevelDebug)
-	//log.SetLogModel(log.ModelDev)
 	if s := os.Getenv("config"); s == "" {
 		envStr := Mode.Get() + ".json"
 		fmt.Println("envStr >>> ", envStr)
 		_, filename, _, _ := runtime.Caller(0)
 		filepath = path.Join(path.Dir(filename), envStr)
-		//cfg := flag.String("c", "", "配置文件")
-		////配置文件
-		//help := flag.Bool("h", false, "help")
-		//flag.Parse()
-		//if *help {
-		//	flag.Usage()
-		//	os.Exit(0)
-		//}
-		//if cfg != nil && len(*cfg) > 0 {
-		//	filepath = *cfg
-		//	ParseConfig(filepath)
-		//} else {
 		ParseConfig(filepath)
-		//}
 	} else {
 		line = line + addline("配置来源", "环境变量")
-		//fmt.Println("配置信息：：：", s)
 		ParseStr(s)
 	}
+
+	//检查环境变量替换数据库配置
+	dbconfig := os.Getenv("dbconfig")
+	if dbconfig != "" {
+		log.Info("替换数据库配置")
+		var dconfig dbConfig
+		if err := json.Unmarshal([]byte(dbconfig), &dconfig); err != nil {
+			log.Panic("数据库配置错误:", err)
+		}
+		config.DbConfig = dconfig
+	}
+
 	line = line + addline("运行模式", Mode.Get())
 	line = line + addline("配置文件", filepath)
 	line = line + addline("当前版本", config.Version)
