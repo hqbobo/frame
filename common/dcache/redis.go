@@ -193,7 +193,12 @@ func (rs *RedisSession) HGetAll(key string) map[string]string {
 	}
 	return rs.client.HGetAll(ctx, key).Val()
 }
-
+func (rs *RedisSession) HLen(key string) int64 {
+	if rs.cluster {
+		return rs.client.HLen(ctx,key).Val()
+	}
+	return rs.client.HLen(ctx,key).Val()
+}
 func (rs *RedisSession) HSet(key, field, data string) error {
 	if rs.cluster {
 		return rs.clusterCLi.HSet(ctx, key, field, data).Err()
