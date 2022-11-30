@@ -13,6 +13,7 @@ type Dcache interface {
 	HGetAll(key string) map[string]string
 	HSet(key, field, data string) error
 	HDel(key, field string) error
+	HLen(key string) int64
 	Get(key string, data interface{}) bool
 	Set(key string, data interface{}, ttl int) bool
 	Delete(key string) bool
