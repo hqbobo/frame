@@ -231,6 +231,16 @@ func init() {
 	SetLevel(TraceLevel)
 }
 
+// NoColor
+func NoColor() {
+	baseLogger.entry.Logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   false,
+		TimestampFormat: "06-01-02 15:04:05.0000",
+		DisableColors:   true,
+	})
+	SetLevel(TraceLevel)
+}
+
 // New returns a new logger.
 func New() Logger {
 	return logger{entry: logrus.NewEntry(origLogger)}
