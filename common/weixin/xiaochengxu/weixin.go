@@ -207,6 +207,7 @@ func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.Us
 	}
 	if o.Errcode != 0 {
 		if o.Errcode == 40001 {
+			log.Warn("莫名过期重新获取:", sess.Token)
 			sess.froceReloadToken()
 		}
 		return nil, errors.New(o.Errmsg)
