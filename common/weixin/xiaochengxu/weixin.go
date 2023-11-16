@@ -85,6 +85,7 @@ func (sess *WeiXinMiniSession) stableToken() error {
 			sess.cache.Set(CacheTokenName+sess.cfg.Appid, &sess.weixntoken)
 		}
 	}
+	return nil
 }
 
 // 在线获取access_token
