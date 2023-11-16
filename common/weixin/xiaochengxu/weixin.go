@@ -46,6 +46,47 @@ type WeiXinMiniSession struct {
 // 获取配置
 func (this *WeiXinMiniSession) CFG() wxmodel.WeixinCfg { return this.cfg }
 
+func (sess *WeiXinMiniSession) stableToken() error {
+	//优先缓存获取token
+	var token weixntoken
+	if sess.cache != nil {
+		if sess.cache.Get(CacheTokenName+sess.cfg.Appid, &token) {
+			//更新本地内存
+			log.Debug("读取缓存token到本地:", token.Token, " 到期时间:", time.Now().Add(time.Second*time.Duration(token.TimeOut-time.Now().Unix())).String())
+			sess.weixntoken = token
+		}
+	}
+	log.Debug("time:", sess.TimeOut, "now:", time.Now().Unix())
+	//还是超时或者没有
+	if sess.Token == "" || sess.TimeOut <= time.Now().Unix() {
+		//在线更新token
+		var rsp minimodel.AccessTokenRsp
+		var req minimodel.AccessStableToken
+		buf, err := json.Marshal(&req)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		r := utils.HttpsPostNoTLS(StableTokeUrl, buf)
+		e := json.Unmarshal(r, &rsp)
+		if e != nil {
+			log.Warn(e)
+			return e
+		}
+		sess.Token = rsp.Access_token
+		sess.TimeOut = int64(rsp.Expires_in) + time.Now().Unix()
+		log.Debug("APPID:["+sess.cfg.Appid+"]在线获取新的token :", rsp.Access_token, " 超时", time.Unix(sess.TimeOut, 0))
+
+		if rsp.Errcode != 0 {
+			return errors.New(rsp.ErrRsp.Errmsg)
+		}
+		//保存到缓存
+		if sess.cache != nil {
+			sess.cache.Set(CacheTokenName+sess.cfg.Appid, &sess.weixntoken)
+		}
+	}
+}
+
 // 在线获取access_token
 func (this *WeiXinMiniSession) reloadToken() error {
 	//优先缓存获取token
@@ -206,10 +247,6 @@ func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.Us
 		return nil, err
 	}
 	if o.Errcode != 0 {
-		if o.Errcode == 40001 {
-			log.Warn("莫名过期重新获取:", sess.Token)
-			sess.froceReloadToken()
-		}
 		return nil, errors.New(o.Errmsg)
 	}
 	return o, nil
@@ -241,8 +278,17 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code, phonecode string
 		return nil, err
 	}
 	log.Debug("iv:", iv, " code:", code, " session_key:", session.Session_key)
+	try := 1
+	//重试1次
+ag:
 	puser, err := sess.weixinMiniProgramGetPhone(phonecode)
 	if err != nil {
+		if puser.Errcode == 40001 && try > 0 {
+			log.Warn("莫名过期重新获取:", sess.Token)
+			sess.froceReloadToken()
+			try--
+			goto ag
+		}
 		return nil, err
 	}
 	user := new(minimodel.UserPhone)

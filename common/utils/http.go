@@ -56,6 +56,25 @@ func HttpGet(url string) (body []byte) {
 	return body
 }
 
+func HttpsPostNoTLS(url string, data []byte) (body []byte) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c := &http.Client{Transport: tr}
+	resp, err := c.Post(url, "application/json;charset=utf-8", bytes.NewBuffer(data))
+	if err != nil {
+		log.Error(err)
+		return []byte("")
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error(err)
+		return []byte("")
+	}
+	return body
+}
+
 func HttpsPost(url, key, cert, root string, data []byte) (body []byte) {
 	var tr *http.Transport
 	certs, err := tls.LoadX509KeyPair(cert, key)
@@ -214,7 +233,7 @@ func HttpWithAuth(url, method, auth string) (body []byte, err error) {
 	return nil, nil
 }
 
-//使用本地文件上传
+// 使用本地文件上传
 func UploadFile(uri string, params map[string]string, paramName, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -318,7 +337,7 @@ func UploadPicByNetUrlSource(desUrl, sourceUrl, paramField string) ([]byte, erro
 	return t, nil
 }
 
-//PostUrlencoded data 必须为key=value形式
+// PostUrlencoded data 必须为key=value形式
 func PostUrlencoded(url string, data string) ([]byte, error) {
 	req, err := http.NewRequest("POST", url, strings.NewReader(data))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

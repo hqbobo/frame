@@ -1,6 +1,7 @@
 package xiaochengxu
 
 const (
+	StableTokeUrl         = "https://api.weixin.qq.com/cgi-bin/stable_token "
 	TokenURL              = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s"
 	weixin_template_url   = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send"
 	mini_subscribe_url    = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send"

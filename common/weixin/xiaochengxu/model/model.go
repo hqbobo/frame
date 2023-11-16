@@ -11,6 +11,12 @@ type AccessTokenRsp struct {
 	ErrRsp
 }
 
+type AccessStableToken struct {
+	Granttype    string `json:"grant_type"`
+	Appid        int64  `json:"appid"`
+	Secret       int64  `json:"secret"`
+	Forcerefresh int64  `json:"force_refresh"`
+}
 type SubscribeMessage struct {
 	Touser            string      `json:"touser"`
 	Template_id       string      `json:"template_id"`
@@ -31,7 +37,7 @@ type SubcribeValue struct {
 
 const SubcribeDateFormat = "2006年01月02日 15:04"
 
-//https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/qr-code/wxacode.getUnlimited.html
+// https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/qr-code/wxacode.getUnlimited.html
 type QrcodeGetUnlimitedReq struct {
 	Scene      string `json:"scene"`
 	Page       string `json:"page"`
