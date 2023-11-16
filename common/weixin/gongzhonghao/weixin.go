@@ -17,7 +17,7 @@ import (
 	"github.com/hqbobo/frame/common/weixin/pay"
 )
 
-//WeixinCacheInterface 微信緩存接口
+// WeixinCacheInterface 微信緩存接口
 type WeixinCacheInterface interface {
 	Get(key string, data interface{}) bool
 	Set(key string, data interface{}) bool
@@ -34,7 +34,7 @@ type weixinticket struct {
 	TicketTimeOut int64
 }
 
-//WeiXinSession 微信主结构
+// WeiXinSession 微信主结构
 type WeiXinSession struct {
 	weixntoken
 	weixinticket
@@ -43,7 +43,7 @@ type WeiXinSession struct {
 	publicKey string
 }
 
-//_HttpPost 封装
+// _HttpPost 封装
 func (ws *WeiXinSession) _HttpPost(url string, data []byte) (body []byte) {
 	var rsp wxmodel.ErrRsp
 	var e error
@@ -60,7 +60,7 @@ func (ws *WeiXinSession) _HttpPost(url string, data []byte) (body []byte) {
 	return r
 }
 
-//_HttpsGet 封装
+// _HttpsGet 封装
 func (ws *WeiXinSession) _HttpsGet(url string) ([]byte, error) {
 	var rsp wxmodel.ErrRsp
 	var e error
@@ -77,7 +77,7 @@ func (ws *WeiXinSession) _HttpsGet(url string) ([]byte, error) {
 	return r, err
 }
 
-//_HttpGet 封装
+// _HttpGet 封装
 func (ws *WeiXinSession) _HttpGet(url string) []byte {
 	var rsp wxmodel.ErrRsp
 	var e error
@@ -94,10 +94,10 @@ func (ws *WeiXinSession) _HttpGet(url string) []byte {
 	return r
 }
 
-//CFG 配置
+// CFG 配置
 func (ws *WeiXinSession) CFG() wxmodel.WeixinCfg { return ws.cfg }
 
-//在线获取access_token
+// 在线获取access_token
 func (ws *WeiXinSession) reloadToken() error {
 	//优先缓存获取token
 	var token weixntoken
@@ -138,12 +138,12 @@ func (ws *WeiXinSession) reloadToken() error {
 	return nil
 }
 
-//GetAccessToken 获取token
+// GetAccessToken 获取token
 func (ws *WeiXinSession) GetAccessToken() (string, error) {
 	return ws.getToken()
 }
 
-//本地获取access_token
+// 本地获取access_token
 func (ws *WeiXinSession) getToken() (string, error) {
 	//检查token是否已经获取和超时
 	if ws.Token == "" || ws.TimeOut <= time.Now().Unix() {
@@ -155,7 +155,7 @@ func (ws *WeiXinSession) getToken() (string, error) {
 	return ws.Token, nil
 }
 
-//Ticket
+// Ticket
 func (ws *WeiXinSession) reloadTicket() error {
 	ws.getToken()
 
@@ -199,7 +199,7 @@ func (ws *WeiXinSession) reloadTicket() error {
 	return nil
 }
 
-//本地获取ticket
+// 本地获取ticket
 func (ws *WeiXinSession) getTicket() (string, error) {
 	//检查ticket是否已经获取和超时
 	if ws.Ticket == "" || ws.TicketTimeOut <= time.Now().Unix() {
@@ -211,7 +211,7 @@ func (ws *WeiXinSession) getTicket() (string, error) {
 	return ws.Ticket, nil
 }
 
-//获取微信服务器IP地址
+// 获取微信服务器IP地址
 func (ws *WeiXinSession) getWeixinSvrIP() error {
 	//更新token
 	var rsp wxmodel.ServerListRsp
@@ -232,12 +232,12 @@ func (ws *WeiXinSession) getWeixinSvrIP() error {
 	return nil
 }
 
-//SetCacheInterface 设置缓存接口
+// SetCacheInterface 设置缓存接口
 func (ws *WeiXinSession) SetCacheInterface(cache WeixinCacheInterface) {
 	ws.cache = cache
 }
 
-//Run 运行
+// Run 运行
 func (ws *WeiXinSession) Run(cb handle.WeixinMsgHandleInterface, eventcb handle.WeixinEventHandleInterface) {
 	var e error
 	if _, e = ws.getToken(); e != nil {
@@ -250,7 +250,7 @@ func (ws *WeiXinSession) Run(cb handle.WeixinMsgHandleInterface, eventcb handle.
 	svrInit(ws, cb, eventcb)
 }
 
-//TokenReset token重置
+// TokenReset token重置
 func (ws *WeiXinSession) TokenReset() {
 	ws.Token = ""
 	ws.Ticket = ""
@@ -260,14 +260,14 @@ func (ws *WeiXinSession) TokenReset() {
 	ws.reloadTicket()
 }
 
-//NewSession 创建一个新的微信实例
+// NewSession 创建一个新的微信实例
 func NewSession(cfg wxmodel.WeixinCfg) *WeiXinSession {
 	O := new(WeiXinSession)
 	O.cfg = cfg
 	return O
 }
 
-//GetUserToken 根据code获取用户token
+// GetUserToken 根据code获取用户token
 func (ws *WeiXinSession) GetUserToken(code string) (*wxmodel.UserToken, error) {
 	url := fmt.Sprintf(weixin_user_token, ws.cfg.Appid, ws.cfg.Appsecret, code)
 	body := ws._HttpGet(url)
@@ -283,7 +283,7 @@ func (ws *WeiXinSession) GetUserToken(code string) (*wxmodel.UserToken, error) {
 	return usr, nil
 }
 
-//GetUInfo 获取用户信息
+// GetUInfo 获取用户信息
 func (ws *WeiXinSession) GetUInfo(openid, token string) (*wxmodel.UInfo, error) {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)
@@ -303,7 +303,7 @@ func (ws *WeiXinSession) GetUInfo(openid, token string) (*wxmodel.UInfo, error) 
 
 var topColor = "#FF0000"
 
-//SendTemplateMsg 发送模板消息
+// SendTemplateMsg 发送模板消息
 func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interface{}) error {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)
@@ -338,7 +338,7 @@ func (ws *WeiXinSession) SendTemplateMsg(openid, templateid string, data interfa
 	return nil
 }
 
-//SendTemplateOnceJumpUrl 发送一次性模板消息
+// SendTemplateOnceJumpUrl 发送一次性模板消息
 func (ws *WeiXinSession) SendTemplateOnceJumpUrl(openid, templateid string, data interface{}, jurl string) error {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)
@@ -374,7 +374,7 @@ func (ws *WeiXinSession) SendTemplateOnceJumpUrl(openid, templateid string, data
 	return nil
 }
 
-//SendTemplateMsg 发送模板消息
+// SendTemplateMsg 发送模板消息
 func (ws *WeiXinSession) SendTemplateMsgJumpUrl(openid, templateid string, data interface{}, jurl string) error {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)
@@ -410,7 +410,7 @@ func (ws *WeiXinSession) SendTemplateMsgJumpUrl(openid, templateid string, data 
 	return nil
 }
 
-//SendTemplateMsgJumpMini 发送模板消息
+// SendTemplateMsgJumpMini 发送模板消息
 func (ws *WeiXinSession) SendTemplateMsgJumpMini(openid, templateid string, data interface{}, appid, jump string) error {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)
@@ -536,13 +536,13 @@ func fillEmpty(s string) string {
 
 const timeFormat = "20060102150405"
 
-//GetAppUnifiedOrder UnifiedOrder
-//https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=4_3
-//计算APP签名
-//https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
-//body 商品描述
-//detail  商品详情
-//attach  自定义字段
+// GetAppUnifiedOrder UnifiedOrder
+// https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=4_3
+// 计算APP签名
+// https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
+// body 商品描述
+// detail  商品详情
+// attach  自定义字段
 func (ws *WeiXinSession) GetAppUnifiedOrder(openid, orderid, body, detail, notifyurl,
 	attach string, fee int, expire time.Time) (*wxmodel.AppUnifierOrderRsp, error) {
 	return pay.GetAppUnifiedOrder(ws.cfg.Appid, ws.cfg.MchId, ws.cfg.APIKey,
@@ -550,7 +550,7 @@ func (ws *WeiXinSession) GetAppUnifiedOrder(openid, orderid, body, detail, notif
 		fee, expire, "WEB")
 }
 
-//Qrpay 扫码支付
+// Qrpay 扫码支付
 func (ws *WeiXinSession) Qrpay(authcode, orderid, body, detail, attach string, fee int) (*wxmodel.QrPayRsp, error) {
 	order := new(wxmodel.QrPay)
 	order.Appid = ws.cfg.Appid
@@ -594,7 +594,7 @@ func (ws *WeiXinSession) Qrpay(authcode, orderid, body, detail, attach string, f
 	return rsp, nil
 }
 
-//Orderquery 查询订单状态
+// Orderquery 查询订单状态
 func (ws *WeiXinSession) Orderquery(transactionid, outtradeno string) (*wxmodel.OrderqueryRsp, error) {
 	var stringTemp string
 	order := new(wxmodel.Orderquery)
@@ -637,7 +637,7 @@ func (ws *WeiXinSession) Orderquery(transactionid, outtradeno string) (*wxmodel.
 	return rsp, nil
 }
 
-//Authcodetoopenid 付款码查询openid
+// Authcodetoopenid 付款码查询openid
 func (ws *WeiXinSession) Authcodetoopenid(AuthCode string) (*wxmodel.AuthcodetoopenidRsp, error) {
 	var stringTemp string
 	order := new(wxmodel.Authcodetoopenid)
@@ -669,14 +669,14 @@ func (ws *WeiXinSession) Authcodetoopenid(AuthCode string) (*wxmodel.Authcodetoo
 	return rsp, nil
 }
 
-//Refund 退款
+// Refund 退款
 func (ws *WeiXinSession) Refund(transactionid, notifyurl, outrefundorder, desc string, fee, total int) (*wxmodel.RefundRsp, error) {
 	return pay.Refund(ws.cfg.Appid, ws.cfg.MchId, ws.cfg.APIKey,
 		transactionid, notifyurl, outrefundorder, desc, ws.cfg.KeyFile, ws.cfg.CertFile,
 		ws.cfg.WXRoot, fee, total)
 }
 
-//WxConfig WxConfig配置
+// WxConfig WxConfig配置
 func (ws *WeiXinSession) WxConfig(url string) (conf wxmodel.WxConfig) {
 	count := 0
 ag:
@@ -707,26 +707,26 @@ ag:
 	return conf
 }
 
-//Draw 提現
+// Draw 提現
 func (ws *WeiXinSession) Draw(orderno, openid, desc, ip string, amount int) (*wxmodel.UserDrawRsp, error) {
 	return pay.Draw(ws.cfg.Appid, ws.cfg.MchId, ws.cfg.APIKey,
 		orderno, openid, desc, ip, ws.cfg.KeyFile, ws.cfg.CertFile,
 		ws.cfg.WXRoot, amount)
 }
 
-//Draw 提現
+// Draw 提現
 func (ws *WeiXinSession) DrawBank(orderno, card, name, bankname, desc string, amount int) (*wxmodel.UserDrawBankRsp, error) {
 	return pay.DrawBank(ws.cfg.MchId, ws.cfg.APIKey,
 		orderno, card, name, bankname, desc, ws.publicKey, ws.cfg.KeyFile, ws.cfg.CertFile,
 		ws.cfg.WXRoot, amount)
 }
 
-//Refundquery 查询退款状态
+// Refundquery 查询退款状态
 func (ws *WeiXinSession) Refundquery(outrefundno string, offset int) (*wxmodel.RefundBody, error) {
 	return pay.Refundquery(ws.cfg.Appid, ws.cfg.MchId, outrefundno, ws.cfg.APIKey, offset)
 }
 
-//GetMaterial 獲取素材列表
+// GetMaterial 獲取素材列表
 func (ws *WeiXinSession) GetMaterial() error {
 	if _, err := ws.getToken(); err != nil {
 		log.Error(err)

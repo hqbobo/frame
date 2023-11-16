@@ -35,7 +35,7 @@ type WeixinCacheInterface interface {
 	Delete(key string) bool
 }
 
-//微信小程序主结构
+// 微信小程序主结构
 type WeiXinMiniSession struct {
 	weixntoken
 	cfg       wxmodel.WeixinCfg
@@ -43,10 +43,10 @@ type WeiXinMiniSession struct {
 	publicKey string
 }
 
-//获取配置
+// 获取配置
 func (this *WeiXinMiniSession) CFG() wxmodel.WeixinCfg { return this.cfg }
 
-//在线获取access_token
+// 在线获取access_token
 func (this *WeiXinMiniSession) reloadToken() error {
 	//优先缓存获取token
 	var token weixntoken
@@ -92,7 +92,36 @@ func (this *WeiXinMiniSession) GetAccessToken() (string, error) {
 	return this.getToken()
 }
 
-//本地获取access_token
+// 本地获取access_token
+func (this *WeiXinMiniSession) froceReloadToken() (string, error) {
+	//在线更新token
+	var rsp minimodel.AccessTokenRsp
+	r, e := utils.HttpsGet(fmt.Sprintf(TokenURL, this.cfg.Appid, this.cfg.Appsecret))
+	if e != nil {
+		log.Warn(e)
+		return "", e
+	}
+	e = json.Unmarshal(r, &rsp)
+	if e != nil {
+		log.Warn(e)
+		return "", e
+	}
+	this.Token = rsp.Access_token
+	this.TimeOut = int64(rsp.Expires_in-100) + time.Now().Unix()
+	log.Debug("APPID:["+this.cfg.Appid+"]在线获取新的token :", rsp.Access_token, " 超时", time.Unix(this.TimeOut, 0))
+
+	if rsp.Errcode != 0 {
+		return "", errors.New(rsp.ErrRsp.Errmsg)
+	}
+	//保存到缓存
+	if this.cache != nil {
+		this.cache.Set(CacheTokenName+this.cfg.Appid, &this.weixntoken)
+	}
+	return this.Token, nil
+
+}
+
+// 本地获取access_token
 func (this *WeiXinMiniSession) getToken() (string, error) {
 	//检查token是否已经获取和超时
 	if this.Token == "" || this.TimeOut <= time.Now().Unix() {
@@ -177,6 +206,9 @@ func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.Us
 		return nil, err
 	}
 	if o.Errcode != 0 {
+		if o.Errcode == 40001 {
+			sess.froceReloadToken()
+		}
 		return nil, errors.New(o.Errmsg)
 	}
 	return o, nil
@@ -212,18 +244,7 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code, phonecode string
 	if err != nil {
 		return nil, err
 	}
-	// pc := utils.WxBizDataCrypt{AppID: sess.cfg.Appid, SessionKey: session.Session_key}
-	// str, err := pc.Decrypt(encryptedData, iv, true) //第三个参数解释： 需要返回 JSON 数据类型时 使用 true, 需要返回 map 数据类型时 使用 false
-	// if err != nil {
-	// 	log.Error(err)
-	// 	return nil, err
-	// }
 	user := new(minimodel.UserPhone)
-	// if err = json.Unmarshal([]byte(str.(string)), user); err != nil {
-	// 	log.Warn(err)
-	// 	return nil, err
-	// }
-	// log.Debug(str.(string))
 	user.PhoneNumber = puser.Phone.PhoneNumber
 	user.PurePhoneNumber = puser.Phone.PurePhoneNumber
 	user.Watermark = puser.Phone.Watermark
@@ -310,12 +331,12 @@ func fillEmpty(s string) string {
 	return s
 }
 
-//https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=4_3
-//计算APP签名
-//https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
-//body 商品描述
-//detail  商品详情
-//attach  自定义字段
+// https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=4_3
+// 计算APP签名
+// https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
+// body 商品描述
+// detail  商品详情
+// attach  自定义字段
 func (this *WeiXinMiniSession) GetAppUnifiedOrder(openid, orderid, body, detail, notifyurl,
 	attach string, fee int, expire time.Time) (*wxmodel.AppUnifierOrderRsp, error) {
 	return pay.GetAppUnifiedOrder(this.cfg.Appid, this.cfg.MchId, this.cfg.APIKey,
@@ -335,12 +356,12 @@ func (this *WeiXinMiniSession) Draw(orderno, openid, desc, ip string, amount int
 		this.cfg.WXRoot, amount)
 }
 
-//Refundquery 查询退款状态
+// Refundquery 查询退款状态
 func (this *WeiXinMiniSession) Refundquery(out_refund_no string, offset int) (*wxmodel.RefundBody, error) {
 	return pay.Refundquery(this.cfg.Appid, this.cfg.MchId, out_refund_no, this.cfg.APIKey, offset)
 }
 
-//Draw 提現
+// Draw 提現
 func (this *WeiXinMiniSession) DrawBank(orderno, card, name, bankname, desc string, amount int) (*wxmodel.UserDrawBankRsp, error) {
 	return pay.DrawBank(this.cfg.MchId, this.cfg.APIKey,
 		orderno, card, name, bankname, desc, this.publicKey, this.cfg.KeyFile, this.cfg.CertFile,
