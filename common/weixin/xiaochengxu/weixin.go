@@ -245,10 +245,10 @@ func (sess *WeiXinMiniSession) weixinMiniProgramGetPhone(code string) (*model.Us
 	o := new(model.UserPhoneByCode)
 	err = json.Unmarshal(body, o)
 	if err != nil {
-		return nil, err
+		return o, err
 	}
 	if o.Errcode != 0 {
-		return nil, errors.New(o.Errmsg)
+		return o, errors.New(o.Errmsg)
 	}
 	return o, nil
 }
@@ -284,7 +284,7 @@ func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code, phonecode string
 ag:
 	puser, err := sess.weixinMiniProgramGetPhone(phonecode)
 	if err != nil {
-		if puser.Errcode == 40001 && try > 0 {
+		if puser != nil && puser.Errcode == 40001 && try > 0 {
 			log.Warn("莫名过期重新获取:", sess.Token)
 			sess.froceReloadToken()
 			try--
