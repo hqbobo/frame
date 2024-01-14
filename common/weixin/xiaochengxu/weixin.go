@@ -19,6 +19,8 @@ import (
 	minimodel "github.com/hqbobo/frame/common/weixin/xiaochengxu/model"
 )
 
+const weixin_kf_url = "https://api.weixin.qq.com/cgi-bin/message/custom/send"
+
 type MiniTpl struct {
 	Tplid   string
 	Context string
@@ -271,6 +273,30 @@ func (sess *WeiXinMiniSession) WxLogin(encryptedData, iv, code string) (*minimod
 	user.Unionid = session.UnionId
 	log.Debug(user)
 	return user, nil
+}
+
+// SendKfText 发送客服消息
+func (ws *WeiXinMiniSession) SendKfText(openid, msg string) error {
+	if _, err := ws.getToken(); err != nil {
+		log.Error(err)
+		return err
+	}
+	wtc := wxmodel.WeixinKfText{}
+	wtc.ToUser = openid
+	wtc.Msgtype = "text"
+	wtc.Text.Content = msg
+	buf, _ := json.Marshal(wtc)
+	url := weixin_kf_url + "?access_token=" + ws.Token
+
+	log.Debug(string(buf))
+	body := utils.HttpPost(url, []byte(buf))
+	wxError := new(wxmodel.ErrRsp)
+	if err := json.Unmarshal(body, wxError); err != nil {
+		return err
+	}
+
+	log.Debug(wxError)
+	return nil
 }
 
 func (sess *WeiXinMiniSession) WxPhone(encryptedData, iv, code, phonecode string) (*minimodel.UserPhone, error) {
