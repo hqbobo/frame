@@ -10,7 +10,7 @@ import (
 const (
 	StdPadding  rune = '-' // Standard padding character
 	NoPadding   rune = -1  // No padding
-	base64Table      = "123456789~@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	base64Table      = "123456789!@#ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 )
 
 var coder = base64.NewEncoding(base64Table).WithPadding(NoPadding)
