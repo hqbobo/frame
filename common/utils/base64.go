@@ -2,14 +2,15 @@ package utils
 
 import (
 	"encoding/base64"
-	"github.com/hqbobo/frame/common/log"
 	"strconv"
+
+	"github.com/hqbobo/frame/common/log"
 )
 
 const (
 	StdPadding  rune = '-' // Standard padding character
 	NoPadding   rune = -1  // No padding
-	base64Table      = "123456789==3ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	base64Table      = "123456789~@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 )
 
 var coder = base64.NewEncoding(base64Table).WithPadding(NoPadding)
